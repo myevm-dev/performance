@@ -1,0 +1,605 @@
+/* src/App.css */
+
+/* Accent colors you like */
+:root {
+  --a1: #fd01f5;
+  --a2: #01fcfc;
+
+  --bg0: #000000;
+  --bg1: #07070a;
+  --bg2: #0c0c12;
+  --card: rgba(255, 255, 255, 0.06);
+  --card2: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.10);
+  --stroke2: rgba(255, 255, 255, 0.14);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --muted2: rgba(255, 255, 255, 0.48);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg0);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+}
+
+.appBg {
+  min-height: 100vh;
+
+  /* keep your exact background */
+  background:
+    radial-gradient(900px 500px at 15% 15%, rgba(253, 1, 245, 0.16), transparent 55%),
+    radial-gradient(900px 500px at 85% 25%, rgba(1, 252, 252, 0.14), transparent 55%),
+    radial-gradient(700px 420px at 50% 90%, rgba(253, 1, 245, 0.10), transparent 60%),
+    linear-gradient(180deg, var(--bg0), var(--bg1) 55%, var(--bg0));
+
+  /* fixes: allow scrolling while touching the leaderboard */
+  overscroll-behavior: none;
+  touch-action: pan-x pan-y;
+}
+
+
+/* Mobile-first container */
+.container {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 22px 0 56px;
+}
+
+/* Navbar */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.70);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--stroke);
+}
+
+.navInner {
+  width: calc(100% - 32px);
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.navGlow {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(253, 1, 245, 0.9), rgba(1, 252, 252, 0.9), transparent);
+  opacity: 0.85;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandMark {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--a1), var(--a2));
+  box-shadow: 0 0 18px rgba(253, 1, 245, 0.35), 0 0 18px rgba(1, 252, 252, 0.25);
+}
+
+.brandTitle {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  line-height: 1.1;
+}
+
+.brandSub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.navBadge {
+  font-size: 12px;
+  color: var(--muted);
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.btnPrimary,
+.btnGhost,
+.iconBtn {
+  border: 1px solid var(--stroke2);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.btnPrimary {
+  background: linear-gradient(135deg, rgba(253, 1, 245, 0.22), rgba(1, 252, 252, 0.18));
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.btnPrimary:hover,
+.btnGhost:hover,
+.iconBtn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.iconBtn {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.infoDot {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--stroke);
+  margin-right: 8px;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* Hero */
+.hero {
+  padding: 18px 0 14px;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 52px);
+  letter-spacing: -0.6px;
+  font-weight: 900;
+}
+
+.subtitle {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Card */
+.card {
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.55);
+}
+
+.cardHeader {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--stroke);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.cardTitle {
+  font-weight: 900;
+  letter-spacing: 0.2px;
+}
+
+.cardSub {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Table */
+/* Table */
+.tableWrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+}
+
+.table {
+  width: max-content;          /* ✅ lets extra columns exist to the right */
+  min-width: 100%;             /* ✅ but still fills the card */
+  border-collapse: collapse;
+}
+
+/* keep headers/cells consistent */
+.table thead th {
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.03);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+
+.rankPill {
+  width: 36px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  font-weight: 900;
+}
+
+
+
+
+
+
+.meta {
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--muted2);
+}
+
+.score {
+  font-weight: 950;
+  letter-spacing: 0.2px;
+  background: linear-gradient(90deg, rgba(253, 1, 245, 0.92), rgba(1, 252, 252, 0.92));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.rowTop .rankPill {
+  border-color: rgba(253, 1, 245, 0.45);
+  box-shadow: 0 0 20px rgba(253, 1, 245, 0.18);
+}
+.rowSecond .rankPill {
+  border-color: rgba(1, 252, 252, 0.40);
+  box-shadow: 0 0 20px rgba(1, 252, 252, 0.14);
+}
+.rowThird .rankPill {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.footerNote {
+  padding: 12px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* -------------------------
+   MODAL (Mobile-first)
+-------------------------- */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.86);
+}
+
+.modalCard {
+  position: relative; /* needed for ::before glow + absolute close button */
+  width: 100%;
+  max-width: 560px;
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  background: linear-gradient(180deg, rgba(12, 12, 16, 0.985), rgba(8, 8, 12, 0.985));
+
+  box-shadow:
+    0 34px 110px rgba(0, 0, 0, 0.78),
+    0 0 0 1px rgba(253, 1, 245, 0.14),
+    0 0 0 2px rgba(1, 252, 252, 0.10);
+}
+
+.modalCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 20px;
+  background:
+    radial-gradient(700px 420px at 12% 12%, rgba(253, 1, 245, 0.16), transparent 55%),
+    radial-gradient(700px 420px at 88% 18%, rgba(1, 252, 252, 0.14), transparent 55%);
+  opacity: 0.9;
+}
+
+/* keep content above the glow layer */
+.modalHeader,
+.modalBody {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header centered, X pinned to corner */
+.modalHeader {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 14px 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 14, 0.88);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.modalHeader .iconBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.modalTitle {
+  font-weight: 950;
+  font-size: 18px;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.modalSub {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.70);
+}
+
+.modalBody {
+  padding: 14px 16px 16px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.sectionTitle {
+  font-weight: 900;
+  margin: 10px 0 8px;
+  font-size: 14px;
+}
+
+.codeBlock {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background:
+    radial-gradient(500px 120px at 20% 0%, rgba(253, 1, 245, 0.10), transparent 60%),
+    radial-gradient(500px 120px at 80% 0%, rgba(1, 252, 252, 0.08), transparent 60%),
+    rgba(0, 0, 0, 0.55);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.panel {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 12px;
+}
+
+.modalCard .panel {
+  background: rgba(0, 0, 0, 0.40);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.panelTitle {
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.list {
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.penaltyTable {
+  margin-top: 10px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+.penRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 12px;
+}
+
+.penRow:first-child {
+  border-top: none;
+}
+
+.pillRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* Desktop+ enhancement */
+@media (min-width: 860px) {
+  .container {
+    padding: 28px 0 64px;
+  }
+
+  .grid2 {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .modalOverlay {
+    padding: 24px;
+  }
+
+  .modalCard {
+    max-width: 980px;
+    border-radius: 22px;
+    max-height: calc(100vh - 48px);
+  }
+
+  .modalCard::before {
+    border-radius: 22px;
+    background:
+      radial-gradient(900px 520px at 12% 12%, rgba(253, 1, 245, 0.16), transparent 55%),
+      radial-gradient(900px 520px at 88% 18%, rgba(1, 252, 252, 0.14), transparent 55%);
+  }
+
+  .modalHeader {
+    padding: 18px 20px;
+  }
+
+  .modalHeader .iconBtn {
+    top: 14px;
+    right: 14px;
+  }
+
+  .modalTitle {
+    font-size: 20px;
+  }
+
+  .modalBody {
+    padding: 18px 20px 22px;
+  }
+
+  .panel {
+    border-radius: 18px;
+    padding: 12px 12px;
+  }
+}
+
+/* -------------------------
+   Mobile: no sticky columns, swipe table
+   Goal: Rank + Server + Score visible, swipe for the rest
+-------------------------- */
+@media (max-width: 720px) {
+  /* stop sideways page rubber-band */
+  html, body { overscroll-behavior: none; }
+
+  .appBg { touch-action: pan-x pan-y; }
+
+  /* ✅ force the table to respect widths */
+  .table { table-layout: fixed; }
+
+  /* ✅ FIRST VIEW: make Rank + Server + Score fit */
+  .table thead th:nth-child(1),
+  .table tbody td:nth-child(1) {
+    width: 56px !important;
+  }
+
+  .table thead th:nth-child(2),
+  .table tbody td:nth-child(2) {
+    width: 130px !important;
+    max-width: 130px !important;
+    overflow: hidden;
+  }
+
+  .table thead th:nth-child(3),
+  .table tbody td:nth-child(3) {
+    width: 80px !important;
+  }
+
+  /* ✅ give the “extra” columns real widths so they show when swiping */
+  .table thead th:nth-child(4),
+  .table tbody td:nth-child(4),
+  .table thead th:nth-child(5),
+  .table tbody td:nth-child(5),
+  .table thead th:nth-child(6),
+  .table tbody td:nth-child(6),
+  .table thead th:nth-child(7),
+  .table tbody td:nth-child(7) {
+    width: 110px !important;
+  }
+
+  /* ✅ truncate server text instead of expanding the column */
+  .nameCell { display: block; min-width: 0; }
+
+  .name, .meta {
+    display: block;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
