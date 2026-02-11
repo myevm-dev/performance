@@ -7,6 +7,8 @@ import { fetchStaffCountsLast21Days } from "./lib/events"
 
 const PROMO_WEIGHT = 0.12
 
+type ViewMode = "store" | "league"
+
 function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null
 
@@ -34,7 +36,6 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         <div className="modalBody">
-        
           <div className="codeBlock">
             Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
             (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
@@ -63,8 +64,8 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
 
               <div className="hint" style={{ marginTop: "10px" }}>
-                We mapped review, reward, and promo expectations to sales, so opportunity is proportional
-                to volume to account for varience in business or quantity of shifts.
+                We mapped review, reward, and promo expectations to sales, so opportunity is
+                proportional to volume to account for varience in business or quantity of shifts.
               </div>
             </div>
 
@@ -117,10 +118,102 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   )
 }
 
+function LeagueComingSoon() {
+  return (
+    <div
+      style={{
+        padding: 18,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,0.10)",
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
+        boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 0.2 }}>
+            WKS Denny&apos;s League
+          </div>
+          <div style={{ opacity: 0.75, fontSize: 13 }}>Coming soon</div>
+        </div>
+
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,0.12)",
+            background: "rgba(0,0,0,0.18)",
+            letterSpacing: 0.6,
+            textTransform: "uppercase",
+          }}
+        >
+          Scoreboard
+        </div>
+      </div>
+
+      <div
+        style={{
+          borderRadius: 14,
+          overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.10)",
+          background: "rgba(0,0,0,0.20)",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 90px",
+            padding: "10px 12px",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            fontSize: 12,
+            fontWeight: 700,
+            opacity: 0.85,
+            letterSpacing: 0.3,
+          }}
+        >
+          <div>Team</div>
+          <div style={{ textAlign: "right" }}>Score</div>
+        </div>
+
+        {["Awaiting competitors", "Awaiting competitors", "Awaiting competitors"].map((t, i) => (
+          <div
+            key={i}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 90px",
+              padding: "12px",
+              borderBottom: i === 2 ? "none" : "1px solid rgba(255,255,255,0.06)",
+              alignItems: "center",
+            }}
+          >
+            <div style={{ opacity: 0.8, fontWeight: 600 }}>{t}</div>
+            <div style={{ textAlign: "right", opacity: 0.65, fontWeight: 800 }}>—</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
+        League will compare stores and districts once competitors are onboarded.
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [infoOpen, setInfoOpen] = useState(false)
+  const [mode, setMode] = useState<ViewMode>("store")
 
-  // Firebase-derived counts (last 21 days) keyed by staffId
   const [countsByStaff, setCountsByStaff] = useState<
     Record<string, { reviews: number; rewards: number }>
   >({})
@@ -169,10 +262,10 @@ export default function App() {
         <div className="navInner">
           <div className="brand">
             <span className="brandMark" />
-              <div className="brandText">
-                <div className="brandTitle">Performance</div>
-                <div className="brandSub">Store 6909</div>
-              </div>
+            <div className="brandText">
+              <div className="brandTitle">Performance</div>
+              <div className="brandSub">Store 6909</div>
+            </div>
           </div>
         </div>
         <div className="navGlow" />
@@ -182,86 +275,151 @@ export default function App() {
         <div className="hero">
           <h1 className="title">Server Leaderboard</h1>
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh: Sun 2/8
+            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh:
+            Sun 2/8
           </p>
         </div>
 
         <div className="card">
           <div className="cardHeader">
             <div>
-              <div className="cardTitle">Leaderboard</div>
-              <div className="cardSub">.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="cardTitle" style={{ marginRight: 4 }}>
+                  {mode === "store" ? "Store" : "League"}
+                </div>
+
+                <div
+                  role="tablist"
+                  aria-label="Leaderboard mode"
+                  style={{
+                    display: "inline-flex",
+                    padding: 4,
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    background: "rgba(0,0,0,0.18)",
+                    gap: 4,
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === "store"}
+                    onClick={() => setMode("store")}
+                    style={{
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: 0.2,
+                      color: "inherit",
+                      background: mode === "store" ? "rgba(255,255,255,0.10)" : "transparent",
+                    }}
+                  >
+                    Store
+                  </button>
+
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mode === "league"}
+                    onClick={() => setMode("league")}
+                    style={{
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "6px 10px",
+                      borderRadius: 999,
+                      fontWeight: 800,
+                      fontSize: 12,
+                      letterSpacing: 0.2,
+                      color: "inherit",
+                      background: mode === "league" ? "rgba(255,255,255,0.10)" : "transparent",
+                    }}
+                  >
+                    League
+                  </button>
+                </div>
+              </div>
+
+              {/* FIX: compare to "store" (lowercase), not "Store" */}
+              <div className="cardSub">{mode === "store" ? "Team 6909" : "WKS league mode"}</div>
             </div>
-            <button
-              className="iconBtn"
-              onClick={() => setInfoOpen(true)}
-              aria-label="Open scoring info"
-            >
+
+            <button className="iconBtn" onClick={() => setInfoOpen(true)} aria-label="Open scoring info">
               ?
             </button>
           </div>
 
-          <div className="tableWrap" aria-label="Leaderboard table scroll area">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: 70 }}>Rank</th>
-                  <th style={{ width: 120 }}>Server</th>
+          {mode === "league" ? (
+            <div style={{ padding: 16 }}>
+              <LeagueComingSoon />
+            </div>
+          ) : (
+            <>
+              <div className="tableWrap" aria-label="Leaderboard table scroll area">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 70 }}>Rank</th>
+                      <th style={{ width: 120 }}>Server</th>
 
-                  <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
-                    Score
-                    <span className="scrollHint" aria-hidden>
-                      › › ›
-                    </span>
-                  </th>
+                      <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
+                        Score
+                        <span className="scrollHint" aria-hidden>
+                          › › ›
+                        </span>
+                      </th>
 
-                  <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
-                  <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
-                  <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
-                  <th style={{ width: 140, textAlign: "right" }}>Promos ($)</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {leaderboard.map((s, idx) => {
-                  const top = idx === 0
-                  const second = idx === 1
-                  const third = idx === 2
-                  const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
-
-                  return (
-                    <tr key={s.id} className={rowClass}>
-                      <td>
-                        <div className="rankPill">{idx + 1}</div>
-                      </td>
-
-                      <td>
-                        <div className="nameCell">
-                          <div>
-                            <div className="name">{s.name}</div>
-                            <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td style={{ textAlign: "right" }}>
-                        <span className="score">{s.score}</span>
-                      </td>
-
-                      <td style={{ textAlign: "right" }}>{s.badaPercent}%</td>
-                      <td style={{ textAlign: "right" }}>{s.reviews}</td>
-                      <td style={{ textAlign: "right" }}>{s.rewards}</td>
-                      <td style={{ textAlign: "right" }}>${s.promoDollars}</td>
+                      <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
+                      <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
+                      <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
+                      <th style={{ width: 140, textAlign: "right" }}>Promos ($)</th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
 
-          <div className="footerNote">
-            Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
-          </div>
+                  <tbody>
+                    {leaderboard.map((s, idx) => {
+                      const top = idx === 0
+                      const second = idx === 1
+                      const third = idx === 2
+                      const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
+
+                      return (
+                        <tr key={s.id} className={rowClass}>
+                          <td>
+                            <div className="rankPill">{idx + 1}</div>
+                          </td>
+
+                          <td>
+                            <div className="nameCell">
+                              <div>
+                                <div className="name">{s.name}</div>
+                                <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <td style={{ textAlign: "right" }}>
+                            <span className="score">{s.score}</span>
+                          </td>
+
+                          <td style={{ textAlign: "right" }}>{s.badaPercent}%</td>
+                          <td style={{ textAlign: "right" }}>{s.reviews}</td>
+                          <td style={{ textAlign: "right" }}>{s.rewards}</td>
+                          <td style={{ textAlign: "right" }}>${s.promoDollars}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="footerNote">
+                Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
+              </div>
+            </>
+          )}
         </div>
       </main>
 
