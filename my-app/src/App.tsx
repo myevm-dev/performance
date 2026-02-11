@@ -120,54 +120,207 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function LeagueComingSoon() {
   return (
-    <div
-      style={{
-        padding: 18,
-        borderRadius: 16,
-        border: "1px solid rgba(255,255,255,0.10)",
-        background:
-          "linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02))",
-        boxShadow: "0 12px 30px rgba(0,0,0,0.35)",
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {/* Matchup card */}
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 12,
+          padding: 18,
+          borderRadius: 18,
+          border: "1px solid rgba(255,255,255,0.10)",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+          boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
+          overflow: "hidden",
+          position: "relative",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: 0.2 }}>
-            WKS Denny&apos;s League
-          </div>
-          <div style={{ opacity: 0.75, fontSize: 13 }}>Coming soon</div>
-        </div>
-
+        {/* Top row */}
         <div
           style={{
-            fontSize: 12,
-            fontWeight: 700,
-            padding: "6px 10px",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(0,0,0,0.18)",
-            letterSpacing: 0.6,
-            textTransform: "uppercase",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 14,
           }}
         >
-          Scoreboard
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: 0.2 }}>
+              WKS Denny&apos;s League
+            </div>
+            <div style={{ opacity: 0.75, fontSize: 13 }}>Coming soon</div>
+          </div>
+
+          <div
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              padding: "6px 10px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(0,0,0,0.18)",
+              letterSpacing: 0.6,
+              textTransform: "uppercase",
+            }}
+          >
+            Preseason
+          </div>
+        </div>
+
+        {/* Matchup */}
+        <div
+          style={{
+            borderRadius: 16,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(0,0,0,0.20)",
+            overflow: "hidden",
+          }}
+        >
+          {/* Header strip */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "10px 12px",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              fontSize: 12,
+              fontWeight: 800,
+              opacity: 0.85,
+              letterSpacing: 0.3,
+            }}
+          >
+            <div>Matchup</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ opacity: 0.8 }}>Awaiting competitors</span>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.45)",
+                  display: "inline-block",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Body */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 80px 1fr",
+              alignItems: "center",
+              padding: 14,
+              gap: 12,
+            }}
+          >
+            {/* Left team */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.7, letterSpacing: 0.4 }}>
+                HOME
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.20)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontWeight: 900,
+                    opacity: 0.85,
+                  }}
+                >
+                  ?
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>
+                  Awaiting Store
+                </div>
+              </div>
+            </div>
+
+            {/* Score */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 34,
+                  fontWeight: 950,
+                  letterSpacing: 0.5,
+                  opacity: 0.8,
+                  lineHeight: 1,
+                }}
+              >
+                — : —
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.7 }}>VS</div>
+            </div>
+
+            {/* Right team */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.7, letterSpacing: 0.4 }}>
+                AWAY
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>
+                  Awaiting Store
+                </div>
+                <div
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(0,0,0,0.20)",
+                    display: "grid",
+                    placeItems: "center",
+                    fontWeight: 900,
+                    opacity: 0.85,
+                  }}
+                >
+                  ?
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer strip */}
+          <div
+            style={{
+              padding: "10px 12px",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 10,
+              fontSize: 12,
+              opacity: 0.75,
+            }}
+          >
+            <div>Format: store vs store</div>
+            <div style={{ fontWeight: 800, opacity: 0.85 }}>Score = Team Avg</div>
+          </div>
         </div>
       </div>
 
+      {/* Scoreboard table under it */}
       <div
         style={{
-          borderRadius: 14,
+          borderRadius: 16,
           overflow: "hidden",
           border: "1px solid rgba(255,255,255,0.10)",
-          background: "rgba(0,0,0,0.20)",
+          background: "rgba(0,0,0,0.18)",
         }}
       >
         <div
@@ -177,7 +330,7 @@ function LeagueComingSoon() {
             padding: "10px 12px",
             borderBottom: "1px solid rgba(255,255,255,0.08)",
             fontSize: 12,
-            fontWeight: 700,
+            fontWeight: 800,
             opacity: 0.85,
             letterSpacing: 0.3,
           }}
@@ -197,18 +350,19 @@ function LeagueComingSoon() {
               alignItems: "center",
             }}
           >
-            <div style={{ opacity: 0.8, fontWeight: 600 }}>{t}</div>
-            <div style={{ textAlign: "right", opacity: 0.65, fontWeight: 800 }}>—</div>
+            <div style={{ opacity: 0.82, fontWeight: 700 }}>{t}</div>
+            <div style={{ textAlign: "right", opacity: 0.65, fontWeight: 900 }}>—</div>
           </div>
         ))}
       </div>
 
-      <div style={{ marginTop: 12, opacity: 0.7, fontSize: 12 }}>
+      <div style={{ opacity: 0.7, fontSize: 12 }}>
         League will compare stores and districts once competitors are onboarded.
       </div>
     </div>
   )
 }
+
 
 export default function App() {
   const [infoOpen, setInfoOpen] = useState(false)
@@ -264,7 +418,7 @@ export default function App() {
             <span className="brandMark" />
             <div className="brandText">
               <div className="brandTitle">Performance</div>
-              <div className="brandSub">Store 6909</div>
+              <div className="brandSub">Team 6909</div>
             </div>
           </div>
         </div>
@@ -284,9 +438,7 @@ export default function App() {
           <div className="cardHeader">
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div className="cardTitle" style={{ marginRight: 4 }}>
-                  {mode === "store" ? "Store" : "League"}
-                </div>
+
 
                 <div
                   role="tablist"
@@ -300,6 +452,7 @@ export default function App() {
                     gap: 4,
                   }}
                 >
+
                   <button
                     type="button"
                     role="tab"
@@ -320,24 +473,34 @@ export default function App() {
                     Store
                   </button>
 
+                  {/* LOCKED TAB */}
                   <button
                     type="button"
                     role="tab"
-                    aria-selected={mode === "league"}
-                    onClick={() => setMode("league")}
+                    aria-selected={false}
+                    aria-disabled="true"
+                    disabled
+                    title="Coming soon"
                     style={{
                       border: "none",
-                      cursor: "pointer",
+                      cursor: "not-allowed",
                       padding: "6px 10px",
                       borderRadius: 999,
                       fontWeight: 800,
                       fontSize: 12,
                       letterSpacing: 0.2,
                       color: "inherit",
-                      background: mode === "league" ? "rgba(255,255,255,0.10)" : "transparent",
+                      background: "transparent",
+                      opacity: 0.55,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
                     }}
                   >
-                    League
+                    <span aria-hidden style={{ fontSize: 12, opacity: 0.9 }}>
+                      🔒
+                    </span>
+                    WKS League
                   </button>
                 </div>
               </div>
