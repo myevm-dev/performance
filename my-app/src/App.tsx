@@ -1,7 +1,7 @@
 // src/App.tsx
 import { useMemo, useState } from "react"
 import "./App.css"
-import { mockServers } from "./data/mockServers"
+import { mockServers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
 
 function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {

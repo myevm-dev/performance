@@ -285,10 +285,7 @@ body {
 .score {
   font-weight: 950;
   letter-spacing: 0.2px;
-  background: linear-gradient(90deg, rgba(253, 1, 245, 0.92), rgba(1, 252, 252, 0.92));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #01fcfc;
 }
 
 .rowTop .rankPill {
