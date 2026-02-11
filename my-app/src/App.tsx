@@ -5,8 +5,12 @@ import { mockServers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
 import { fetchStaffCountsLast21Days } from "./lib/events"
 
+const PROMO_WEIGHT = 0.12
+
 function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null
+
+  const weighted = (base: number) => Math.round(base * PROMO_WEIGHT)
 
   return (
     <div className="modalOverlay" onClick={onClose} role="presentation">
@@ -33,7 +37,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           <div className="sectionTitle">Equation v1.0.0</div>
           <div className="codeBlock">
             Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
-            (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × 0.12)
+            (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="grid2">
@@ -53,22 +57,23 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </ul>
 
               <div className="hint">
-                BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
-                BADA is scaled against 135%. Reviews are expected at 1 per $500 in sales. Rewards
-                are expected at 1 per $800 in sales.
+                BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score. BADA is
+                scaled against 135%. Reviews are expected at 1 per $500 in sales. Rewards are
+                expected at 1 per $800 in sales.
               </div>
 
               <div className="hint" style={{ marginTop: "10px" }}>
                 Because review and reward expectations scale with sales, opportunity is proportional
-                to volume. Higher performance relative to your sales increases your score. There are
-                no caps.
+                to volume. Higher performance relative to your sales increases your score. There
+                are no caps.
               </div>
             </div>
 
             <div className="panel">
               <div className="panelTitle">Promo/Void penalty</div>
               <div className="hint">
-                Promos/voids are evaluated as % of sales and subtract points if over standard.
+                Promos/voids are evaluated as % of sales. The tier below shows the base penalty, and
+                the actual score deduction is weighted at {(PROMO_WEIGHT * 100).toFixed(0)}%.
               </div>
 
               <div className="penaltyTable">
@@ -76,21 +81,25 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                   <span>≤ 0.20%</span>
                   <span>0</span>
                 </div>
+
                 <div className="penRow">
                   <span>0.21–0.30%</span>
-                  <span>−50</span>
+                  <span>−50 (−{weighted(50)} pts)</span>
                 </div>
+
                 <div className="penRow">
                   <span>0.31–0.50%</span>
-                  <span>−100</span>
+                  <span>−100 (−{weighted(100)} pts)</span>
                 </div>
+
                 <div className="penRow">
                   <span>0.51–0.75%</span>
-                  <span>−175</span>
+                  <span>−175 (−{weighted(175)} pts)</span>
                 </div>
+
                 <div className="penRow">
                   <span>&gt; 0.75%</span>
-                  <span>−250</span>
+                  <span>−250 (−{weighted(250)} pts)</span>
                 </div>
               </div>
             </div>
@@ -98,10 +107,11 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="sectionTitle">How to win</div>
           <div className="pillRow">
-            <span className="pill">Push BADA</span>
+            <span className="pill">Use your QR codes</span>
+            <span className="pill">Suggestive Sell</span>
             <span className="pill">Ask for reviews</span>
-            <span className="pill">Enroll rewards</span>
-            <span className="pill">Control promos</span>
+            <span className="pill">Offer rewards</span>
+            <span className="pill">Double check when ringing in orders</span>
           </div>
         </div>
       </div>
@@ -123,7 +133,7 @@ export default function App() {
     ;(async () => {
       try {
         const counts = await fetchStaffCountsLast21Days("6909")
-          console.log("Loaded event counts:", counts)
+        console.log("Loaded event counts:", counts)
         if (alive) setCountsByStaff(counts)
       } catch (err) {
         console.error("Failed to load events:", err)
@@ -174,8 +184,7 @@ export default function App() {
         <div className="hero">
           <h1 className="title">Server Performance Leaderboard</h1>
           <p className="subtitle">
-            Trailing 21 days · Last refresh: Sun 2/8 · BADA & Promos weekly · Reviews & Rewards near
-            real-time
+            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh: Sun 2/8
           </p>
         </div>
 
@@ -183,7 +192,7 @@ export default function App() {
           <div className="cardHeader">
             <div>
               <div className="cardTitle">Leaderboard</div>
-              <div className="cardSub">Highest score wins the period</div>
+              <div className="cardSub">.</div>
             </div>
             <button
               className="iconBtn"
@@ -253,7 +262,7 @@ export default function App() {
           </div>
 
           <div className="footerNote">
-            Tip: Click <span className="mono">Scoring</span> in the top bar to see the exact equation.
+            Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
           </div>
         </div>
       </main>
