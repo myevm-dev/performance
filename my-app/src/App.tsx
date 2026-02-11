@@ -104,7 +104,6 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             </div>
           </div>
 
-          <div className="sectionTitle">How to win</div>
           <div className="pillRow">
             <span className="pill">Use your QR codes</span>
             <span className="pill">Suggestive Sell</span>
