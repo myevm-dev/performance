@@ -182,7 +182,7 @@ export default function App() {
 
       <main className="container">
         <div className="hero">
-          <h1 className="title">Leaderboard</h1>
+          <h1 className="title">Server Leaderboard</h1>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh: Sun 2/8
           </p>
