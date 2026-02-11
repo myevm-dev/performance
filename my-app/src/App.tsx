@@ -28,7 +28,8 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="modalBody">
           <div className="sectionTitle">Equation v1.0.0</div>
             <div className="codeBlock">
-              Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − PromoPenalty
+              Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × 0.15)
+
             </div>
 
 
@@ -148,8 +149,12 @@ export default function App() {
       <main className="container">
         <div className="hero">
           <h1 className="title">Server Performance Leaderboard</h1>
-          <p className="subtitle">Updated weekly · Based on trailing 21-day performance</p>
+            <p className="subtitle">
+              Trailing 21 days · Last refresh: Sun 2/8 · BADA & Promos weekly · Reviews & Rewards near real-time
+            </p>
+
         </div>
+
 
         <div className="card">
           <div className="cardHeader">
