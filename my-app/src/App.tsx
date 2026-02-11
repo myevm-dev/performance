@@ -26,10 +26,12 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         <div className="modalBody">
-          <div className="sectionTitle">Equation</div>
-          <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − PromoPenalty
-          </div>
+          <div className="sectionTitle">Equation v1.0.0</div>
+            <div className="codeBlock">
+              Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − PromoPenalty
+            </div>
+
+
 
           <div className="grid2">
             <div className="panel">
@@ -47,21 +49,26 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 </li>
               </ul>
 
-              <div className="hint">
-                The numbers 135, 25, and 10 are <b>reference points</b> used to scale each category fairly.
-                Hitting those reference points gives the full weight for that category (460, 390, 150 points).
-                They are <b>not caps</b>—going above them increases your score.
-              </div>
 
-              <div className="hint" style={{ marginTop: "10px" }}>
-                Example: If you hit <b>135% BADA</b>, you earn the full <b>460 BADA points</b>. If you hit{" "}
-                <b>25 reviews</b>, you earn the full <b>390 review points</b>. If you hit <b>10 rewards</b>,
-                you earn the full <b>150 rewards points</b>.
-              </div>
+
+            <div className="hint">
+              BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
+              BADA is scaled against 135%.
+              Reviews are expected at 1 per $500 in sales.
+              Rewards are expected at 1 per $800 in sales.
+            </div>
+
+            <div className="hint" style={{ marginTop: "10px" }}>
+              Because review and reward expectations scale with sales, opportunity is proportional to volume.
+              Higher performance relative to your sales increases your score.
+              There are no caps.
+            </div>
+
+
             </div>
 
             <div className="panel">
-              <div className="panelTitle">Promo penalty</div>
+              <div className="panelTitle">Promo/Void penalty</div>
               <div className="hint">
                 Promos/voids are evaluated as % of sales and subtract points if over standard.
               </div>
