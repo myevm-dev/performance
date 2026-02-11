@@ -171,10 +171,10 @@ export default function App() {
         <div className="navInner">
           <div className="brand">
             <span className="brandMark" />
-            <div className="brandText">
-              <div className="brandTitle">Performance</div>
-              <div className="brandSub">Server Leaderboard</div>
-            </div>
+              <div className="brandText">
+                <div className="brandTitle">Performance</div>
+                <div className="brandSub">Store 6909</div>
+              </div>
           </div>
         </div>
         <div className="navGlow" />
@@ -182,7 +182,7 @@ export default function App() {
 
       <main className="container">
         <div className="hero">
-          <h1 className="title">Server Performance Leaderboard</h1>
+          <h1 className="title">Leaderboard</h1>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh: Sun 2/8
           </p>
