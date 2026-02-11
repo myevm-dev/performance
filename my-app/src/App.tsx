@@ -33,18 +33,39 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="grid2">
             <div className="panel">
-              <div className="panelTitle">Targets</div>
+              <div className="panelTitle">How the score is weighted</div>
+
               <ul className="list">
-                <li>BADA target: 135%</li>
-                <li>Review target: 25 in 21 days</li>
-                <li>Rewards target: 10 in 21 days</li>
+                <li>
+                  <b>BADA:</b> 46% of the score
+                </li>
+                <li>
+                  <b>Reviews:</b> 39% of the score
+                </li>
+                <li>
+                  <b>Rewards:</b> 15% of the score
+                </li>
               </ul>
-              <div className="hint">Targets are reference points, not caps. Higher performance earns more points.</div>
+
+              <div className="hint">
+                The numbers 135, 25, and 10 are <b>reference points</b> used to scale each category fairly.
+                Hitting those reference points gives the full weight for that category (460, 390, 150 points).
+                They are <b>not caps</b>—going above them increases your score.
+              </div>
+
+              <div className="hint" style={{ marginTop: "10px" }}>
+                Example: If you hit <b>135% BADA</b>, you earn the full <b>460 BADA points</b>. If you hit{" "}
+                <b>25 reviews</b>, you earn the full <b>390 review points</b>. If you hit <b>10 rewards</b>,
+                you earn the full <b>150 rewards points</b>.
+              </div>
             </div>
 
             <div className="panel">
               <div className="panelTitle">Promo penalty</div>
-              <div className="hint">Promos/voids are evaluated as % of sales and subtract points if over standard.</div>
+              <div className="hint">
+                Promos/voids are evaluated as % of sales and subtract points if over standard.
+              </div>
+
               <div className="penaltyTable">
                 <div className="penRow">
                   <span>≤ 0.20%</span>
@@ -78,6 +99,10 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             <span className="pill">Control promos</span>
           </div>
         </div>
+
+
+
+        
       </div>
     </div>
   )

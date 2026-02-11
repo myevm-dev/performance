@@ -15,7 +15,7 @@ export function calculateScore({
   const reviewPoints = 390 * (reviews / 25)
   const rewardPoints = 150 * (rewards / 10)
 
-  const promoRate = promoDollars / sales
+  const promoRate = sales > 0 ? promoDollars / sales : 0
 
   let promoPenalty = 0
   if (promoRate > 0.75 / 100) promoPenalty = 250
