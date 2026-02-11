@@ -1,23 +1,27 @@
 // src/App.tsx
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import "./App.css"
 import { mockServers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
+import { fetchStaffCountsLast21Days } from "./lib/events"
 
 function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null
 
   return (
     <div className="modalOverlay" onClick={onClose} role="presentation">
-      <div className="modalCard" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+      <div
+        className="modalCard"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="modalHeader">
           <div /> {/* left spacer */}
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">How scoring works</div>
-            <div className="modalSub">
-              Rolling 21-day performance · Updated weekly
-            </div>
+            <div className="modalSub">Rolling 21-day performance · Updated weekly</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -27,12 +31,10 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="modalBody">
           <div className="sectionTitle">Equation v1.0.0</div>
-            <div className="codeBlock">
-              Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × 0.15)
-
-            </div>
-
-
+          <div className="codeBlock">
+            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
+            (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × 0.12)
+          </div>
 
           <div className="grid2">
             <div className="panel">
@@ -50,22 +52,17 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 </li>
               </ul>
 
+              <div className="hint">
+                BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
+                BADA is scaled against 135%. Reviews are expected at 1 per $500 in sales. Rewards
+                are expected at 1 per $800 in sales.
+              </div>
 
-
-            <div className="hint">
-              BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
-              BADA is scaled against 135%.
-              Reviews are expected at 1 per $500 in sales.
-              Rewards are expected at 1 per $800 in sales.
-            </div>
-
-            <div className="hint" style={{ marginTop: "10px" }}>
-              Because review and reward expectations scale with sales, opportunity is proportional to volume.
-              Higher performance relative to your sales increases your score.
-              There are no caps.
-            </div>
-
-
+              <div className="hint" style={{ marginTop: "10px" }}>
+                Because review and reward expectations scale with sales, opportunity is proportional
+                to volume. Higher performance relative to your sales increases your score. There are
+                no caps.
+              </div>
             </div>
 
             <div className="panel">
@@ -107,10 +104,6 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             <span className="pill">Control promos</span>
           </div>
         </div>
-
-
-
-        
       </div>
     </div>
   )
@@ -119,15 +112,48 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 export default function App() {
   const [infoOpen, setInfoOpen] = useState(false)
 
+  // Firebase-derived counts (last 21 days) keyed by staffId
+  const [countsByStaff, setCountsByStaff] = useState<
+    Record<string, { reviews: number; rewards: number }>
+  >({})
+
+  useEffect(() => {
+    let alive = true
+
+    ;(async () => {
+      try {
+        const counts = await fetchStaffCountsLast21Days("6909")
+          console.log("Loaded event counts:", counts)
+        if (alive) setCountsByStaff(counts)
+      } catch (err) {
+        console.error("Failed to load events:", err)
+      }
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [])
+
   const leaderboard = useMemo(() => {
     return mockServers
-      .map((server) => ({
-        ...server,
-        score: calculateScore(server),
-        promoRate: server.sales > 0 ? server.promoDollars / server.sales : 0,
-      }))
+      .map((server) => {
+        const c = countsByStaff[server.id] ?? { reviews: 0, rewards: 0 }
+
+        const merged = {
+          ...server,
+          reviews: c.reviews,
+          rewards: c.rewards,
+        }
+
+        return {
+          ...merged,
+          score: calculateScore(merged),
+          promoRate: merged.sales > 0 ? merged.promoDollars / merged.sales : 0,
+        }
+      })
       .sort((a, b) => b.score - a.score)
-  }, [])
+  }, [countsByStaff])
 
   return (
     <div className="appBg">
@@ -140,8 +166,6 @@ export default function App() {
               <div className="brandSub">Server Leaderboard</div>
             </div>
           </div>
-
-
         </div>
         <div className="navGlow" />
       </div>
@@ -149,12 +173,11 @@ export default function App() {
       <main className="container">
         <div className="hero">
           <h1 className="title">Server Performance Leaderboard</h1>
-            <p className="subtitle">
-              Trailing 21 days · Last refresh: Sun 2/8 · BADA & Promos weekly · Reviews & Rewards near real-time
-            </p>
-
+          <p className="subtitle">
+            Trailing 21 days · Last refresh: Sun 2/8 · BADA & Promos weekly · Reviews & Rewards near
+            real-time
+          </p>
         </div>
-
 
         <div className="card">
           <div className="cardHeader">
@@ -162,27 +185,27 @@ export default function App() {
               <div className="cardTitle">Leaderboard</div>
               <div className="cardSub">Highest score wins the period</div>
             </div>
-            <button className="iconBtn" onClick={() => setInfoOpen(true)} aria-label="Open scoring info">
+            <button
+              className="iconBtn"
+              onClick={() => setInfoOpen(true)}
+              aria-label="Open scoring info"
+            >
               ?
             </button>
           </div>
 
           <div className="tableWrap" aria-label="Leaderboard table scroll area">
-
             <table className="table">
               <thead>
                 <tr>
                   <th style={{ width: 70 }}>Rank</th>
-
-                  {/* ✅ ADD THIS WIDTH */}
                   <th style={{ width: 120 }}>Server</th>
 
-                  <th
-                    className="scoreHeader"
-                    style={{ width: 120, textAlign: "right" }}
-                  >
+                  <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
                     Score
-                    <span className="scrollHint" aria-hidden>› › ›</span>
+                    <span className="scrollHint" aria-hidden>
+                      › › ›
+                    </span>
                   </th>
 
                   <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
@@ -190,8 +213,8 @@ export default function App() {
                   <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
                   <th style={{ width: 140, textAlign: "right" }}>Promos ($)</th>
                 </tr>
-
               </thead>
+
               <tbody>
                 {leaderboard.map((s, idx) => {
                   const top = idx === 0
@@ -204,18 +227,20 @@ export default function App() {
                       <td>
                         <div className="rankPill">{idx + 1}</div>
                       </td>
+
                       <td>
                         <div className="nameCell">
                           <div>
                             <div className="name">{s.name}</div>
                             <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
-
                           </div>
                         </div>
                       </td>
+
                       <td style={{ textAlign: "right" }}>
                         <span className="score">{s.score}</span>
                       </td>
+
                       <td style={{ textAlign: "right" }}>{s.badaPercent}%</td>
                       <td style={{ textAlign: "right" }}>{s.reviews}</td>
                       <td style={{ textAlign: "right" }}>{s.rewards}</td>
