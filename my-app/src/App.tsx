@@ -25,7 +25,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">How scoring works</div>
-            <div className="modalSub">Rolling 21-day performance · Updated weekly</div>
+            <div className="modalSub">Scoring v1.0.0</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -34,7 +34,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         <div className="modalBody">
-          <div className="sectionTitle">Equation v1.0.0</div>
+        
           <div className="codeBlock">
             Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
             (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
@@ -63,9 +63,8 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
 
               <div className="hint" style={{ marginTop: "10px" }}>
-                Because review and reward expectations scale with sales, opportunity is proportional
-                to volume. Higher performance relative to your sales increases your score. There
-                are no caps.
+                We mapped review, reward, and promo expectations to sales, so opportunity is proportional
+                to volume to account for varience in business or quantity of shifts.
               </div>
             </div>
 
@@ -78,7 +77,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
               <div className="penaltyTable">
                 <div className="penRow">
-                  <span>≤ 0.20%</span>
+                  <span>≤ 0.20% of sales</span>
                   <span>0</span>
                 </div>
 
