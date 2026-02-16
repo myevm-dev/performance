@@ -25,6 +25,6 @@ export const Servers: ServerStats[] = [
 
   { id: "115", name: "Brandi", sales: 2753, badaPercent: 140.8, reviews: 0, rewards: 0, promoDollars: 66.1 },
   { id: "116", name: "Brisa", sales: 1469, badaPercent: 143.6, reviews: 0, rewards: 0, promoDollars: 18 },
-  { id: "118", name: "Itzel", sales: 2578, badaPercent: 143.6, reviews: 0, rewards: 0, promoDollars: 0 },
+  { id: "120", name: "Itzel", sales: 2578, badaPercent: 143.6, reviews: 0, rewards: 0, promoDollars: 0 },
 
 ]
