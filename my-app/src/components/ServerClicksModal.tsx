@@ -77,11 +77,7 @@ export default function ServerClicksModal({ open, onClose, storeNumber, staffId,
     return list
   }, [eventsByStaff, filter, staffId])
 
-  const totals = useMemo(() => {
-    const reviews = selectedEvents.filter((x) => x.event === "click_review").length
-    const rewards = selectedEvents.filter((x) => x.event === "click_rewards").length
-    return { reviews, rewards, total: selectedEvents.length }
-  }, [selectedEvents])
+
 
   if (!open) return null
 
@@ -129,8 +125,7 @@ export default function ServerClicksModal({ open, onClose, storeNumber, staffId,
           <div style={{ display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: 14, fontWeight: 950, opacity: 0.92 }}>{staffName}</div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-              Store {storeNumber} · Trailing 21 days · Reviews {totals.reviews} · Rewards{" "}
-              {totals.rewards}
+              Store {storeNumber}
             </div>
           </div>
 
@@ -273,7 +268,7 @@ export default function ServerClicksModal({ open, onClose, storeNumber, staffId,
             fontSize: 12,
           }}
         >
-          Data source: /stores/{storeNumber}/events · Filtered to trailing 21 days
+          Filtered to trailing 21 days
         </div>
       </div>
     </div>

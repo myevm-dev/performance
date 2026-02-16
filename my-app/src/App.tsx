@@ -113,6 +113,23 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             <span className="pill">Offer rewards</span>
             <span className="pill">Double check when ringing in orders</span>
           </div>
+          <div className="panel" style={{ marginTop: 18 }}>
+            <div className="panelTitle">Missing Customer Clicks?</div>
+
+            <div className="hint">
+              If your Reviews or Rewards feel lower than expected, make sure you are actively using
+              your personal QR code and encouraging guests to scan it before they leave.
+            </div>
+
+            <div className="hint" style={{ marginTop: 10 }}>
+              Click tracking uses device ID verification to maintain fairness and prevent abuse.
+              Multiple submissions from the same device are subject to cooldown limits and may
+              not count toward your totals. This ensures accurate performance tracking and protects the integrity of the leaderboard.
+
+            </div>
+
+          </div>
+
         </div>
       </div>
     </div>
@@ -531,17 +548,21 @@ export default function App() {
                           <td>
                             <div className="nameCell">
                               <div>
+                                
                                 <button
-  type="button"
-  onClick={() => {
-    setSelectedStaffId(s.id)
-    setSelectedStaffName(s.name)
-    setClicksOpen(true)
-  }}
-  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 900 }}
->
-  {s.name}
-</button>
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedStaffId(s.id)
+                                    setSelectedStaffName(s.name)
+                                    setClicksOpen(true)
+                                  }}
+                                  className="clickableName"
+                                >
+                                  {s.name}
+                                </button>
+                                
+
+
 
                                 <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
                               </div>
