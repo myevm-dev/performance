@@ -1,9 +1,10 @@
 // src/App.tsx
 import { useEffect, useMemo, useState } from "react"
 import "./App.css"
-import { mockServers } from "./data/updateBADA"
+import { Servers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
 import { fetchStaffCountsLast21Days } from "./lib/events"
+import ServerClicksModal from "./components/ServerClicksModal"
 
 const PROMO_WEIGHT = 0.12
 
@@ -23,7 +24,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         aria-modal="true"
       >
         <div className="modalHeader">
-          <div /> {/* left spacer */}
+          <div />
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">How scoring works</div>
@@ -37,8 +38,8 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="modalBody">
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
-            (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷
+            (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="grid2">
@@ -121,20 +122,17 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 function LeagueComingSoon() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Matchup card */}
       <div
         style={{
           padding: 18,
           borderRadius: 18,
           border: "1px solid rgba(255,255,255,0.10)",
-          background:
-            "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+          background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
           boxShadow: "0 14px 34px rgba(0,0,0,0.38)",
           overflow: "hidden",
           position: "relative",
         }}
       >
-        {/* Top row */}
         <div
           style={{
             display: "flex",
@@ -167,7 +165,6 @@ function LeagueComingSoon() {
           </div>
         </div>
 
-        {/* Matchup */}
         <div
           style={{
             borderRadius: 16,
@@ -176,7 +173,6 @@ function LeagueComingSoon() {
             overflow: "hidden",
           }}
         >
-          {/* Header strip */}
           <div
             style={{
               display: "flex",
@@ -205,7 +201,6 @@ function LeagueComingSoon() {
             </div>
           </div>
 
-          {/* Body */}
           <div
             style={{
               display: "grid",
@@ -215,7 +210,6 @@ function LeagueComingSoon() {
               gap: 12,
             }}
           >
-            {/* Left team */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.7, letterSpacing: 0.4 }}>
                 HOME
@@ -237,21 +231,11 @@ function LeagueComingSoon() {
                 >
                   ?
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>
-                  Awaiting Store
-                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>Awaiting Store</div>
               </div>
             </div>
 
-            {/* Score */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
               <div
                 style={{
                   fontSize: 34,
@@ -266,16 +250,13 @@ function LeagueComingSoon() {
               <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.7 }}>VS</div>
             </div>
 
-            {/* Right team */}
             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
               <div style={{ fontSize: 12, fontWeight: 900, opacity: 0.7, letterSpacing: 0.4 }}>
                 AWAY
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>
-                  Awaiting Store
-                </div>
+                <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.9 }}>Awaiting Store</div>
                 <div
                   style={{
                     width: 34,
@@ -295,7 +276,6 @@ function LeagueComingSoon() {
             </div>
           </div>
 
-          {/* Footer strip */}
           <div
             style={{
               padding: "10px 12px",
@@ -314,7 +294,6 @@ function LeagueComingSoon() {
         </div>
       </div>
 
-      {/* Scoreboard table under it */}
       <div
         style={{
           borderRadius: 16,
@@ -363,14 +342,17 @@ function LeagueComingSoon() {
   )
 }
 
-
 export default function App() {
   const [infoOpen, setInfoOpen] = useState(false)
   const [mode, setMode] = useState<ViewMode>("store")
+  const [clicksOpen, setClicksOpen] = useState(false)
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
+  const [selectedStaffName, setSelectedStaffName] = useState("")
 
-  const [countsByStaff, setCountsByStaff] = useState<
-    Record<string, { reviews: number; rewards: number }>
-  >({})
+
+  const [countsByStaff, setCountsByStaff] = useState<Record<string, { reviews: number; rewards: number }>>(
+    {}
+  )
 
   useEffect(() => {
     let alive = true
@@ -378,7 +360,6 @@ export default function App() {
     ;(async () => {
       try {
         const counts = await fetchStaffCountsLast21Days("6909")
-        console.log("Loaded event counts:", counts)
         if (alive) setCountsByStaff(counts)
       } catch (err) {
         console.error("Failed to load events:", err)
@@ -391,7 +372,7 @@ export default function App() {
   }, [])
 
   const leaderboard = useMemo(() => {
-    return mockServers
+    return Servers
       .map((server) => {
         const c = countsByStaff[server.id] ?? { reviews: 0, rewards: 0 }
 
@@ -430,7 +411,7 @@ export default function App() {
           <h1 className="title">Server Leaderboard</h1>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh:
-            Sun 2/8
+            Sun 2/15
           </p>
         </div>
 
@@ -438,8 +419,6 @@ export default function App() {
           <div className="cardHeader">
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-
-
                 <div
                   role="tablist"
                   aria-label="Leaderboard mode"
@@ -452,7 +431,6 @@ export default function App() {
                     gap: 4,
                   }}
                 >
-
                   <button
                     type="button"
                     role="tab"
@@ -473,7 +451,6 @@ export default function App() {
                     Store
                   </button>
 
-                  {/* LOCKED TAB */}
                   <button
                     type="button"
                     role="tab"
@@ -505,7 +482,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* FIX: compare to "store" (lowercase), not "Store" */}
               <div className="cardSub">{mode === "store" ? "Team 6909" : "WKS league mode"}</div>
             </div>
 
@@ -526,14 +502,12 @@ export default function App() {
                     <tr>
                       <th style={{ width: 70 }}>Rank</th>
                       <th style={{ width: 120 }}>Server</th>
-
                       <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
                         Score
                         <span className="scrollHint" aria-hidden>
                           › › ›
                         </span>
                       </th>
-
                       <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
                       <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
                       <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
@@ -557,7 +531,18 @@ export default function App() {
                           <td>
                             <div className="nameCell">
                               <div>
-                                <div className="name">{s.name}</div>
+                                <button
+  type="button"
+  onClick={() => {
+    setSelectedStaffId(s.id)
+    setSelectedStaffName(s.name)
+    setClicksOpen(true)
+  }}
+  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 900 }}
+>
+  {s.name}
+</button>
+
                                 <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
                               </div>
                             </div>
@@ -587,6 +572,15 @@ export default function App() {
       </main>
 
       <InfoModal open={infoOpen} onClose={() => setInfoOpen(false)} />
+
+      {/* ✅ Render the modal once, outside the table */}
+      <ServerClicksModal
+        open={clicksOpen}
+        onClose={() => setClicksOpen(false)}
+        storeNumber="6909"
+        staffId={selectedStaffId}
+        staffName={selectedStaffName}
+      />
     </div>
   )
 }
