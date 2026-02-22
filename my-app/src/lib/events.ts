@@ -4,7 +4,7 @@ import { db } from "./firebase"
 
 type EventName = "click_review" | "click_rewards"
 
-type StoreEventDoc = {
+type UniqueClickDoc = {
   createdAt: Timestamp
   event: EventName
   staffId: string
@@ -20,18 +20,22 @@ export type StaffEvent = {
 
 export type StaffEventsByStaff = Record<string, StaffEvent[]>
 
-export async function fetchStaffCountsLast21Days(storeNumber: string): Promise<StaffCounts> {
-  const cutoff = Timestamp.fromDate(new Date(Date.now() - 21 * 24 * 60 * 60 * 1000))
-  const eventsRef = collection(db, "stores", storeNumber, "events")
+function cutoffTimestampLast21Days() {
+  return Timestamp.fromDate(new Date(Date.now() - 21 * 24 * 60 * 60 * 1000))
+}
 
-  // Only filter by createdAt (avoids needing a composite index)
-  const q = query(eventsRef, where("createdAt", ">=", cutoff))
+export async function fetchStaffCountsLast21Days(storeNumber: string): Promise<StaffCounts> {
+  const cutoff = cutoffTimestampLast21Days()
+
+  // ✅ Read the deduped, "counted" source of truth
+  const ref = collection(db, "stores", storeNumber, "uniqueClicks")
+  const q = query(ref, where("createdAt", ">=", cutoff))
   const snap = await getDocs(q)
 
   const counts: StaffCounts = {}
 
   snap.forEach((docSnap) => {
-    const data = docSnap.data() as Partial<StoreEventDoc>
+    const data = docSnap.data() as Partial<UniqueClickDoc>
     const staffId = data.staffId
     const event = data.event
 
@@ -48,17 +52,17 @@ export async function fetchStaffCountsLast21Days(storeNumber: string): Promise<S
 }
 
 export async function fetchStaffEventsLast21Days(storeNumber: string): Promise<StaffEventsByStaff> {
-  const cutoff = Timestamp.fromDate(new Date(Date.now() - 21 * 24 * 60 * 60 * 1000))
-  const eventsRef = collection(db, "stores", storeNumber, "events")
+  const cutoff = cutoffTimestampLast21Days()
 
-  // Only filter by createdAt (avoids needing a composite index)
-  const q = query(eventsRef, where("createdAt", ">=", cutoff))
+  // ✅ Read the deduped list for the modal too
+  const ref = collection(db, "stores", storeNumber, "uniqueClicks")
+  const q = query(ref, where("createdAt", ">=", cutoff))
   const snap = await getDocs(q)
 
   const grouped: StaffEventsByStaff = {}
 
   snap.forEach((docSnap) => {
-    const data = docSnap.data() as Partial<StoreEventDoc>
+    const data = docSnap.data() as Partial<UniqueClickDoc>
     const staffId = data.staffId
     const event = data.event
     const createdAt = data.createdAt
@@ -70,7 +74,6 @@ export async function fetchStaffEventsLast21Days(storeNumber: string): Promise<S
     grouped[staffId].push({ staffId, event, createdAt })
   })
 
-  // Sort newest first per staff
   Object.keys(grouped).forEach((k) => {
     grouped[k].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis())
   })
