@@ -28,7 +28,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">How scoring works</div>
-            <div className="modalSub">Scoring v1.0.0</div>
+            <div className="modalSub">Scoring v1.0.1</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -428,7 +428,7 @@ export default function App() {
           <h1 className="title">Server Leaderboard</h1>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh:
-            Sun 2/15
+            Fri 2/21
           </p>
         </div>
 
