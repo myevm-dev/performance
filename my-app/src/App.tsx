@@ -66,7 +66,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
               <div className="hint" style={{ marginTop: "10px" }}>
                 We mapped review, reward, and promo expectations to sales, so opportunity is
-                proportional to volume to account for varience in business or quantity of shifts.
+                proportional to sales volume to account for varience in business or quantity of shifts.
               </div>
             </div>
 
@@ -108,7 +108,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="pillRow">
             <span className="pill">Use your QR codes</span>
-            <span className="pill">Suggestive Sell</span>
+            <span className="pill">Suggestive sell</span>
             <span className="pill">Ask for reviews</span>
             <span className="pill">Offer rewards</span>
             <span className="pill">Double check when ringing in orders</span>
