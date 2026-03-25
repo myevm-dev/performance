@@ -528,7 +528,7 @@ export default function App() {
                       <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
                       <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
                       <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
-                      <th style={{ width: 140, textAlign: "right" }}>Promos ($)</th>
+                      <th style={{ width: 140, textAlign: "right" }}>Promos/Voids ($)</th>
                     </tr>
                   </thead>
 
