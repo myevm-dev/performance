@@ -644,7 +644,7 @@ function HomeStoreModal({
                 <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
                   Selected store
                 </div>
-                <div style={{ fontWeight: 800 }}>{search}</div>
+                <div style={{ fontWeight: 500, color: "cyan", }}>{search}</div>
               </div>
             )}
 
@@ -743,6 +743,9 @@ export default function App() {
 }, [])
 
 const activeStore = homeStore || "6909"
+const activeStoreName =
+  localStores.find((s) => s.storeNumber === activeStore)?.name ??
+  `Store ${activeStore}`
 
 const handleSaveHomeStore = () => {
   if (!selectedStore) return
@@ -800,6 +803,19 @@ const handleSaveHomeStore = () => {
       <main className="container">
         <div className="hero">
           <h1 className="title">Server Leaderboard</h1>
+
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 20,
+              color: "cyan",
+              fontWeight: 700,
+              opacity: 0.75,
+              letterSpacing: 0.3,
+            }}
+          >
+            {activeStoreName}
+          </div>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh:
             Tue 3/24
@@ -831,6 +847,7 @@ const handleSaveHomeStore = () => {
                       border: "none",
                       cursor: "pointer",
                       padding: "6px 10px",
+
                       borderRadius: 999,
                       fontWeight: 800,
                       fontSize: 12,
@@ -839,7 +856,7 @@ const handleSaveHomeStore = () => {
                       background: mode === "store" ? "rgba(255,255,255,0.10)" : "transparent",
                     }}
                   >
-                    Store
+                    Team {activeStore}
                   </button>
 
                   <button 
@@ -874,7 +891,6 @@ const handleSaveHomeStore = () => {
                 </div>
               </div>
 
-              <div className="cardSub">{mode === "store" ? `Team ${activeStore}` : "WKS league mode"}</div>
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>
