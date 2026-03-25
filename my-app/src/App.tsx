@@ -717,7 +717,7 @@ const handleSaveHomeStore = () => {
                     <span aria-hidden style={{ fontSize: 12, opacity: 0.9 }}>
                       🔒
                     </span>
-                    WKS League
+                    WKS League Preview
                   </button>
                 </div>
               </div>
