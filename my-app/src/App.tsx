@@ -431,7 +431,7 @@ function HomeStoreModal({
                   setSearch(e.target.value)
                   setSelectedStore("")
                 }}
-                placeholder="Search by store number or name"
+                placeholder="Search by name or store number"
                 style={{
                   width: "100%",
                   padding: "12px 14px",
