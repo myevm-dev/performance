@@ -389,14 +389,19 @@ function HomeStoreModal({
 }) {
   if (!open) return null
 
-  const filtered = stores.filter((store) => {
-    const q = search.toLowerCase().trim()
-    if (!q) return true
-    return (
-      store.storeNumber.toLowerCase().includes(q) ||
-      store.label.toLowerCase().includes(q)
-    )
-  })
+  const query = search.toLowerCase().trim()
+
+  const filtered =
+    query.length === 0
+      ? []
+      : stores
+          .filter((store) => {
+            return (
+              store.storeNumber.toLowerCase().includes(query) ||
+              store.label.toLowerCase().includes(query)
+            )
+          })
+          .slice(0, 8)
 
   return (
     <div className="modalOverlay" role="presentation">
@@ -419,66 +424,88 @@ function HomeStoreModal({
           <div className="panel">
             <div className="panelTitle">Search stores</div>
 
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by store number"
-              style={{
-                width: "100%",
-                marginTop: 12,
-                marginBottom: 14,
-                padding: "12px 14px",
-                borderRadius: 14,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.05)",
-                color: "white",
-                outline: "none",
-              }}
-            />
+            <div style={{ position: "relative", marginTop: 12 }}>
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value)
+                  setSelectedStore("")
+                }}
+                placeholder="Search by store number or name"
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(255,255,255,0.05)",
+                  color: "white",
+                  outline: "none",
+                }}
+              />
 
-            <div
-              style={{
-                maxHeight: 320,
-                overflowY: "auto",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}
-            >
-              {filtered.map((store) => {
-                const active = selectedStore === store.storeNumber
-
-                return (
-                  <button
-                    key={store.id}
-                    type="button"
-                    onClick={() => setSelectedStore(store.storeNumber)}
-                    style={{
-                      textAlign: "left",
-                      padding: "12px 14px",
-                      borderRadius: 14,
-                      border: active
-                        ? "1px solid rgba(1,252,252,0.5)"
-                        : "1px solid rgba(255,255,255,0.10)",
-                      background: active
-                        ? "linear-gradient(90deg, rgba(253,1,245,0.16), rgba(1,252,252,0.14))"
-                        : "rgba(255,255,255,0.04)",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontWeight: 800 }}>Store {store.storeNumber}</div>
-                    <div style={{ fontSize: 12, opacity: 0.72 }}>{store.label}</div>
-                  </button>
-                )
-              })}
-
-              {filtered.length === 0 && (
-                <div style={{ opacity: 0.75, fontSize: 14 }}>
-                  No stores found.
+              {filtered.length > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    left: 0,
+                    right: 0,
+                    zIndex: 20,
+                    borderRadius: 14,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    background: "rgba(10,10,16,0.98)",
+                    boxShadow: "0 18px 50px rgba(0,0,0,0.45)",
+                    overflow: "hidden",
+                  }}
+                >
+                  {filtered.map((store, idx) => (
+                    <button
+                      key={store.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedStore(store.storeNumber)
+                        setSearch(`${store.label} (#${store.storeNumber})`)
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "12px 14px",
+                        border: "none",
+                        borderBottom:
+                          idx === filtered.length - 1
+                            ? "none"
+                            : "1px solid rgba(255,255,255,0.06)",
+                        background: "transparent",
+                        color: "white",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontWeight: 800 }}>{store.label}</div>
+                      <div style={{ fontSize: 12, opacity: 0.72 }}>
+                        #{store.storeNumber}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
+
+            {selectedStore && (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: "12px 14px",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  background: "rgba(255,255,255,0.04)",
+                }}
+              >
+                <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
+                  Selected store
+                </div>
+                <div style={{ fontWeight: 800 }}>{search}</div>
+              </div>
+            )}
 
             <button
               type="button"
