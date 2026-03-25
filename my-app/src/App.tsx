@@ -48,7 +48,7 @@ function ScoreBreakdownModal({
 }) {
   if (!open || !server) return null
 
-  const badaPoints = 460 * (server.badaPercent / 135)
+  const badaPoints = 460 * (server.badaPercent / 130)
   const reviewPoints = 390 * (server.reviews / 25)
   const rewardPoints = 150 * (server.rewards / 10)
   const promoRate = server.sales > 0 ? server.promoDollars / server.sales : 0
@@ -77,7 +77,7 @@ function ScoreBreakdownModal({
 
         <div className="modalBody">
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (460 × (BADA% ÷ 130)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="panel" style={{ marginTop: 16 }}>
@@ -116,7 +116,7 @@ function ScoreBreakdownModal({
 
             <div className="penaltyTable" style={{ marginTop: 12 }}>
               <div className="penRow">
-                <span>460 × ({server.badaPercent} ÷ 135)</span>
+                <span>460 × ({server.badaPercent} ÷ 130)</span>
                 <span>{badaPoints.toFixed(2)}</span>
               </div>
               <div className="penRow">
@@ -179,7 +179,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">How scoring works</div>
-            <div className="modalSub">Scoring v1.1.1</div>
+            <div className="modalSub">Scoring v1.2.1</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -189,7 +189,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="modalBody">
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 135)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷
+            Score = (460 × (BADA% ÷ 130)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷
             (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
@@ -213,7 +213,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
               <div className="hint">
                 BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score. BADA is
-                scaled against 135%. Reviews are expected at 1 per $500 in sales. Rewards are
+                scaled against 130%. Reviews are expected at 1 per $500 in sales. Rewards are
                 expected at 1 per $800 in sales.
               </div>
 
