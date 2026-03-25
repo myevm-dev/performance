@@ -428,7 +428,7 @@ export default function App() {
           <h1 className="title">Server Leaderboard</h1>
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last refresh:
-            Fri 3/13
+            Tue 3/24
           </p>
         </div>
 
