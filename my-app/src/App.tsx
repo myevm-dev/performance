@@ -5,8 +5,17 @@ import { Servers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
 import { fetchStaffCountsLast21Days } from "./lib/events"
 import ServerClicksModal from "./components/ServerClicksModal"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "./lib/firebase"
+import { stores as localStores } from "./data/stores"
 
 const PROMO_WEIGHT = 0.12
+
+type StoreOption = {
+  id: string
+  storeNumber: string
+  label: string
+}
 
 type ViewMode = "store" | "league"
 
@@ -361,12 +370,155 @@ function LeagueComingSoon() {
   )
 }
 
+function HomeStoreModal({
+  open,
+  stores,
+  search,
+  setSearch,
+  selectedStore,
+  setSelectedStore,
+  onConfirm,
+}: {
+  open: boolean
+  stores: StoreOption[]
+  search: string
+  setSearch: (value: string) => void
+  selectedStore: string
+  setSelectedStore: (value: string) => void
+  onConfirm: () => void
+}) {
+  if (!open) return null
+
+  const filtered = stores.filter((store) => {
+    const q = search.toLowerCase().trim()
+    if (!q) return true
+    return (
+      store.storeNumber.toLowerCase().includes(q) ||
+      store.label.toLowerCase().includes(q)
+    )
+  })
+
+  return (
+    <div className="modalOverlay" role="presentation">
+      <div
+        className="modalCard"
+        role="dialog"
+        aria-modal="true"
+        style={{ maxWidth: 560 }}
+      >
+        <div className="modalHeader">
+          <div />
+          <div className="modalHeaderCenter">
+            <div className="modalTitle">Choose your home store</div>
+            <div className="modalSub">You can change this later</div>
+          </div>
+          <div style={{ width: 40 }} />
+        </div>
+
+        <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">Search stores</div>
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by store number"
+              style={{
+                width: "100%",
+                marginTop: 12,
+                marginBottom: 14,
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.05)",
+                color: "white",
+                outline: "none",
+              }}
+            />
+
+            <div
+              style={{
+                maxHeight: 320,
+                overflowY: "auto",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}
+            >
+              {filtered.map((store) => {
+                const active = selectedStore === store.storeNumber
+
+                return (
+                  <button
+                    key={store.id}
+                    type="button"
+                    onClick={() => setSelectedStore(store.storeNumber)}
+                    style={{
+                      textAlign: "left",
+                      padding: "12px 14px",
+                      borderRadius: 14,
+                      border: active
+                        ? "1px solid rgba(1,252,252,0.5)"
+                        : "1px solid rgba(255,255,255,0.10)",
+                      background: active
+                        ? "linear-gradient(90deg, rgba(253,1,245,0.16), rgba(1,252,252,0.14))"
+                        : "rgba(255,255,255,0.04)",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ fontWeight: 800 }}>Store {store.storeNumber}</div>
+                    <div style={{ fontSize: 12, opacity: 0.72 }}>{store.label}</div>
+                  </button>
+                )
+              })}
+
+              {filtered.length === 0 && (
+                <div style={{ opacity: 0.75, fontSize: 14 }}>
+                  No stores found.
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!selectedStore}
+              style={{
+                marginTop: 16,
+                width: "100%",
+                padding: "12px 14px",
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: selectedStore
+                  ? "linear-gradient(90deg, rgba(253,1,245,0.22), rgba(1,252,252,0.18))"
+                  : "rgba(255,255,255,0.08)",
+                color: "white",
+                fontWeight: 800,
+                cursor: selectedStore ? "pointer" : "not-allowed",
+                opacity: selectedStore ? 1 : 0.6,
+              }}
+            >
+              Save Home Store
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
   const [infoOpen, setInfoOpen] = useState(false)
   const [mode, setMode] = useState<ViewMode>("store")
   const [clicksOpen, setClicksOpen] = useState(false)
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
   const [selectedStaffName, setSelectedStaffName] = useState("")
+  const [storesList, setStoresList] = useState<StoreOption[]>([])
+  const [homeStore, setHomeStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
+  const [storePickerOpen, setStorePickerOpen] = useState(() => !localStorage.getItem("homeStore"))
+  const [storeSearch, setStoreSearch] = useState("")
+  const [selectedStore, setSelectedStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
 
 
   const [countsByStaff, setCountsByStaff] = useState<Record<string, { reviews: number; rewards: number }>>(
@@ -374,21 +526,69 @@ export default function App() {
   )
 
   useEffect(() => {
-    let alive = true
+  let alive = true
 
-    ;(async () => {
-      try {
-        const counts = await fetchStaffCountsLast21Days("6909")
-        if (alive) setCountsByStaff(counts)
-      } catch (err) {
-        console.error("Failed to load events:", err)
-      }
-    })()
+  ;(async () => {
+    try {
+      const snap = await getDocs(collection(db, "stores"))
 
-    return () => {
-      alive = false
+      const rows: StoreOption[] = snap.docs
+        .map((docSnap) => {
+          const data = docSnap.data() as {
+            storeNumber?: string
+            storeEmail?: string
+          }
+
+          const storeNumber = String(data.storeNumber ?? docSnap.id)
+
+          const localMatch = localStores.find(
+            (s) => s.storeNumber === storeNumber
+          )
+
+          return {
+            id: docSnap.id,
+            storeNumber,
+            label: localMatch?.name ?? `Store ${storeNumber}`,
+          }
+        })
+        .sort((a, b) => a.storeNumber.localeCompare(b.storeNumber))
+
+      if (alive) setStoresList(rows)
+    } catch (err) {
+      console.error("Failed to load stores:", err)
     }
-  }, [])
+  })()
+
+  return () => {
+    alive = false
+  }
+}, [])
+
+const activeStore = homeStore || "6909"
+
+const handleSaveHomeStore = () => {
+  if (!selectedStore) return
+  localStorage.setItem("homeStore", selectedStore)
+  setHomeStore(selectedStore)
+  setStorePickerOpen(false)
+}
+
+  useEffect(() => {
+  let alive = true
+
+  ;(async () => {
+    try {
+      const counts = await fetchStaffCountsLast21Days(activeStore)
+      if (alive) setCountsByStaff(counts)
+    } catch (err) {
+      console.error("Failed to load events:", err)
+    }
+  })()
+
+  return () => {
+    alive = false
+  }
+}, [activeStore])
 
   const leaderboard = useMemo(() => {
     return Servers
@@ -414,13 +614,7 @@ export default function App() {
     <div className="appBg">
       <div className="nav">
         <div className="navInner">
-          <div className="brand">
-            <span className="brandMark" />
-            <div className="brandText">
-              <div className="brandTitle">Performance</div>
-              <div className="brandSub">Team 6909</div>
-            </div>
-          </div>
+   
         </div>
         <div className="navGlow" />
       </div>
@@ -501,12 +695,32 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="cardSub">{mode === "store" ? "Team 6909" : "WKS league mode"}</div>
+              <div className="cardSub">{mode === "store" ? `Team ${activeStore}` : "WKS league mode"}</div>
             </div>
 
-            <button className="iconBtn" onClick={() => setInfoOpen(true)} aria-label="Open scoring info">
-              ?
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                className="iconBtn"
+                onClick={() => {
+                  setSelectedStore(activeStore)
+                  setStoreSearch("")
+                  setStorePickerOpen(true)
+                }}
+                aria-label="Change store"
+                title="Change store"
+              >
+                ⇄
+              </button>
+
+              <button
+                className="iconBtn"
+                onClick={() => setInfoOpen(true)}
+                aria-label="Open scoring info"
+                title="Scoring info"
+              >
+                ?
+              </button>
+            </div>
           </div>
 
           {mode === "league" ? (
@@ -616,9 +830,18 @@ export default function App() {
       <ServerClicksModal
         open={clicksOpen}
         onClose={() => setClicksOpen(false)}
-        storeNumber="6909"
+        storeNumber={activeStore}
         staffId={selectedStaffId}
         staffName={selectedStaffName}
+      />
+      <HomeStoreModal
+        open={storePickerOpen}
+        stores={storesList}
+        search={storeSearch}
+        setSearch={setStoreSearch}
+        selectedStore={selectedStore}
+        setSelectedStore={setSelectedStore}
+        onConfirm={handleSaveHomeStore}
       />
     </div>
   )
