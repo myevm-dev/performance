@@ -20,7 +20,7 @@ type StoreOption = {
 type ViewMode = "store" | "league"
 
 function getPromoPenaltyColor(promoRate: number) {
-  if (promoRate <= 0.002) return "rgba(34, 231, 57, 0.92)" // <= 0.20%
+  if (promoRate <= 0.002) return "rgba(105, 213, 118, 0.92)" // <= 0.20%
   if (promoRate <= 0.003) return "#fca5a5" // 0.21–0.30%
   if (promoRate <= 0.005) return "#f87171" // 0.31–0.50%
   if (promoRate <= 0.0075) return "#ef4444" // 0.51–0.75%
@@ -97,29 +97,28 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
 
               <div className="penaltyTable">
-                <div className="penRow" style={{ color: "rgba(34, 231, 57, 0.92)" }}>
+                <div className="penRow" style={{ color: "rgba(105, 213, 118, 0.92)" }}>
                   <span>≤ 0.20% of sales</span>
                   <span>0</span>
                 </div>
-
                 <div className="penRow" style={{ color: "#fca5a5" }}>
                   <span>0.21–0.30%</span>
-                  <span>−50 (−6 pts)</span>
+                  <span>−50 (−{weighted(50)} pts)</span>
                 </div>
 
                 <div className="penRow" style={{ color: "#f87171" }}>
                   <span>0.31–0.50%</span>
-                  <span>−100 (−12 pts)</span>
+                  <span>−100 (−{weighted(100)} pts)</span>
                 </div>
 
                 <div className="penRow" style={{ color: "#ef4444" }}>
                   <span>0.51–0.75%</span>
-                  <span>−175 (−21 pts)</span>
+                  <span>−175 (−{weighted(175)} pts)</span>
                 </div>
 
                 <div className="penRow" style={{ color: "#b91c1c" }}>
                   <span>&gt; 0.75%</span>
-                  <span>−250 (−30 pts)</span>
+                  <span>−250 (−{weighted(250)} pts)</span>
                 </div>
               </div>
             </div>
