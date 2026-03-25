@@ -407,13 +407,18 @@ body {
 .codeBlock {
   padding: 12px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid transparent;
   background:
-    radial-gradient(500px 120px at 20% 0%, rgba(253, 1, 245, 0.10), transparent 60%),
-    radial-gradient(500px 120px at 80% 0%, rgba(1, 252, 252, 0.08), transparent 60%),
-    rgba(0, 0, 0, 0.55);
+    linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)) padding-box,
+    linear-gradient(90deg, rgba(253, 1, 245, 0.45), rgba(1, 252, 252, 0.45)) border-box,
+    radial-gradient(500px 120px at 20% 0%, rgba(253, 1, 245, 0.16), transparent 60%),
+    radial-gradient(500px 120px at 80% 0%, rgba(1, 252, 252, 0.14), transparent 60%);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    0 0 24px rgba(253, 1, 245, 0.08),
+    0 0 24px rgba(1, 252, 252, 0.06);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.96);
   font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
@@ -440,8 +445,7 @@ body {
 }
 
 .panelTitle {
-  font-weight: 900;
-  margin-bottom: 8px;
+  color: #01fcfc;
 }
 
 .list {
@@ -486,12 +490,26 @@ body {
 }
 
 .pill {
+  padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 8px 10px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.86);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  background:
+    radial-gradient(300px 80px at 20% 0%, rgba(253, 1, 245, 0.16), transparent 60%),
+    radial-gradient(300px 80px at 80% 0%, rgba(1, 252, 252, 0.14), transparent 60%),
+    linear-gradient(90deg, rgba(253, 1, 245, 0.08), rgba(1, 252, 252, 0.08)),
+    rgba(0, 0, 0, 0.55);
+
+  color: rgba(255, 255, 255, 0.95);
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.35),
+    0 0 10px rgba(253, 1, 245, 0.12),
+    0 0 10px rgba(1, 252, 252, 0.10);
+
+  transition: all 0.2s ease;
 }
 
 /* Desktop+ enhancement */

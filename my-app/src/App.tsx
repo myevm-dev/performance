@@ -45,6 +45,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           <div className="grid2">
             <div className="panel">
               <div className="panelTitle">How the score is weighted</div>
+              <br/>
 
               <ul className="list">
                 <li>
@@ -57,6 +58,7 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                   <b>Rewards:</b> 15% of the score
                 </li>
               </ul>
+              <br/>
 
               <div className="hint">
                 BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score. BADA is
