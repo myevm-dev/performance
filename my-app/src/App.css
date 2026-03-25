@@ -185,7 +185,7 @@ body {
   margin: 0;
   font-size: clamp(28px, 5vw, 52px);
   letter-spacing: -0.6px;
-  font-weight: 900;
+  font-weight: 800;
 }
 
 .subtitle {
