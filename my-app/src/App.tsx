@@ -521,9 +521,7 @@ export default function App() {
                       <th style={{ width: 120 }}>Server</th>
                       <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
                         Score
-                        <span className="scrollHint" aria-hidden>
-                          › › ›
-                        </span>
+                      
                       </th>
                       <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
                       <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
@@ -573,10 +571,28 @@ export default function App() {
                             <span className="score">{s.score}</span>
                           </td>
 
-                          <td style={{ textAlign: "right" }}>{s.badaPercent}%</td>
+                          <td style={{ textAlign: "right" }}>
+                            <span
+                              style={{
+                                color: s.badaPercent >= 130 ? "#22c55e" : "#ef4444", // green : red
+                                fontWeight: 700,
+                              }}
+                            >
+                              {s.badaPercent}%
+                            </span>
+                          </td>
                           <td style={{ textAlign: "right" }}>{s.reviews}</td>
                           <td style={{ textAlign: "right" }}>{s.rewards}</td>
-                          <td style={{ textAlign: "right" }}>${s.promoDollars}</td>
+                          <td style={{ textAlign: "right" }}>
+                            <span
+                              style={{
+                                color: s.promoRate > 0.002 ? "#ef4444" : "#22c55e", // >0.2% red, <=0.2% green
+                                fontWeight: 700,
+                              }}
+                            >
+                              ${s.promoDollars}
+                            </span>
+                          </td>
                         </tr>
                       )
                     })}
