@@ -279,6 +279,12 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               not count toward your totals. This ensures accurate performance tracking and protects the integrity of the leaderboard.
 
             </div>
+            <div className="panelTitle">Want More Data?</div>
+
+            <div className="hint">
+              Dive deeper into performance by clicking on any server’s name or individual metric. You’ll unlock detailed breakdowns, trends, and insights that help you understand exactly what’s driving results. Keep an eye out for achievements, personal bests, and category‑specific competitions. The system is always tracking new milestones and highlighting standout performance.            </div>
+
+          
 
           </div>
 
