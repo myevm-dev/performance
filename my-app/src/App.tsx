@@ -823,7 +823,7 @@ const handleSaveHomeStore = () => {
             {activeStoreName}
           </div>
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · LastBADA refresh:
+            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last BADA refresh:
             Friday 3/27
           </p>
         </div>
