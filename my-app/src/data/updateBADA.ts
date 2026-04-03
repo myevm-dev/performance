@@ -12,7 +12,6 @@ export const Servers: ServerStats[] = [
   { id: "103", name: "Edna", sales: 229, badaPercent: 100, reviews: 0, rewards: 0, promoDollars: 0 },
   { id: "104", name: "Angelica", sales: 3457, badaPercent: 113.5, reviews: 0, rewards: 0, promoDollars: 3.6 },
   { id: "114", name: "Jazmin", sales: 7947, badaPercent: 122.6, reviews: 0, rewards: 0, promoDollars: 38.5 },
-  { id: "105", name: "Damian", sales: 923, badaPercent: 176.5, reviews: 0, rewards: 0, promoDollars: 0 },
   { id: "106", name: "Kianna", sales: 1703, badaPercent: 142.5, reviews: 0, rewards: 0, promoDollars: 17.8 },
   { id: "107", name: "Lizbeth", sales: 3434, badaPercent: 121.5, reviews: 0, rewards: 0, promoDollars: 10 },
   { id: "108", name: "Natalie", sales: 1974, badaPercent: 165.1, reviews: 0, rewards: 0, promoDollars: 9 },
