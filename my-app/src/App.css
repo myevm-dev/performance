@@ -183,7 +183,7 @@ body {
 
 .title {
   margin: 0;
-  font-size: clamp(28px, 5vw, 52px);
+  font-size: clamp(24px, 5vw, 52px);
   letter-spacing: -0.6px;
   font-weight: 800;
 }
