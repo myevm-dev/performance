@@ -8,6 +8,7 @@ import ServerClicksModal from "./components/ServerClicksModal"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "./lib/firebase"
 import { stores as localStores } from "./data/stores"
+import ServerProfilePage from "./pages/ServerProfilePage"
 
 const PROMO_WEIGHT = 0.15
 
@@ -703,7 +704,7 @@ export default function App() {
     sales: number
     score: number
   } | null>(null)
-
+  const [selectedProfile, setSelectedProfile] = useState<any | null>(null)
 
   const [countsByStaff, setCountsByStaff] = useState<Record<string, { reviews: number; rewards: number }>>(
     {}
@@ -777,6 +778,9 @@ const handleSaveHomeStore = () => {
   }
 }, [activeStore])
 
+      
+
+
   const leaderboard = useMemo(() => {
     return Servers
       .map((server) => {
@@ -796,6 +800,15 @@ const handleSaveHomeStore = () => {
       })
       .sort((a, b) => b.score - a.score)
   }, [countsByStaff])
+
+  if (selectedProfile) {
+        return (
+          <ServerProfilePage
+            server={selectedProfile}
+            onBack={() => setSelectedProfile(null)}
+          />
+        )
+      }
 
   return (
     <div className="appBg">
@@ -955,7 +968,27 @@ const handleSaveHomeStore = () => {
                       const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
 
                       return (
-                        <tr key={s.id} className={rowClass}>
+                        <tr
+                          key={s.id}
+                          className={rowClass}
+                          onClick={() => {
+                            setSelectedProfile({
+                              id: s.id,
+                              name: s.name,
+                              storeNumber: activeStore,
+                              storeName: activeStoreName,
+                              score: s.score,
+                              badaPercent: s.badaPercent,
+                              reviews: s.reviews,
+                              rewards: s.rewards,
+                              promoDollars: s.promoDollars,
+                              sales: s.sales,
+                              promoRate: s.promoRate,
+                              avatarSeed: s.id,
+                            })
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
                           <td>
                             <div className="rankPill">{idx + 1}</div>
                           </td>
@@ -963,79 +996,35 @@ const handleSaveHomeStore = () => {
                           <td>
                             <div className="nameCell">
                               <div>
-                                
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedStaffId(s.id)
-                                    setSelectedStaffName(s.name)
-                                    setClicksOpen(true)
-                                  }}
-                                  className="clickableName"
-                                >
+                                <div className="clickableName">
                                   {s.name}
-                                </button>
-                                
-
-
-
+                                </div>
                                 <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
                               </div>
                             </div>
                           </td>
 
                           <td style={{ textAlign: "right" }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedScoreServer({
-                                  name: s.name,
-                                  badaPercent: s.badaPercent,
-                                  reviews: s.reviews,
-                                  rewards: s.rewards,
-                                  promoDollars: s.promoDollars,
-                                  sales: s.sales,
-                                  score: s.score,
-                                })
-                                setScoreOpen(true)
-                              }}
-                              style={{
-                                background: "transparent",
-                                border: "none",
-                                color: "inherit",
-                                cursor: "pointer",
-                                padding: 0,
-                                font: "inherit",
-                              }}
-                              title="View score breakdown"
-                            >
-                              <span className="score" style={{ textDecoration: "underline dotted" }}>
-                                {s.score}
-                              </span>
-                            </button>
+                            <span className="score" style={{ textDecoration: "underline dotted" }}>
+                              {s.score}
+                            </span>
                           </td>
 
                           <td style={{ textAlign: "right" }}>
                             <span
                               style={{
-                                color: s.badaPercent >= 130 ? "#22c55e" : "#ef4444", // green : red
+                                color: s.badaPercent >= 130 ? "#22c55e" : "#ef4444",
                                 fontWeight: 700,
                               }}
                             >
                               {s.badaPercent}%
                             </span>
                           </td>
+
                           <td style={{ textAlign: "right" }}>{s.reviews}</td>
                           <td style={{ textAlign: "right" }}>{s.rewards}</td>
-                          <td style={{ textAlign: "right" }}>
-                            <span
-                              style={{
-                                color: getPromoPenaltyColor(s.promoRate),
-                                fontWeight: 700,
-                              }}
-                            >
-                              ${s.promoDollars}
-                            </span>
+                          <td style={{ textAlign: "right", color: getPromoPenaltyColor(s.promoRate), fontWeight: 800 }}>
+                            ${s.promoDollars}
                           </td>
                         </tr>
                       )
