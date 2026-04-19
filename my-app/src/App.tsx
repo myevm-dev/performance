@@ -821,7 +821,7 @@ const handleSaveHomeStore = () => {
 
       <main className="container">
         <div className="hero">
-          <h1 className="title">Server Leaderboard</h1>
+          <h1 className="title">Server Leaderboard V2 Coming Soon</h1>
 
           <div
             style={{
