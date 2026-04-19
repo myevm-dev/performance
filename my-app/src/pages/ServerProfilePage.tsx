@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 type ServerProfile = {
   id: string
@@ -638,15 +638,15 @@ export default function ServerProfilePage({
                     }}
                     >
                     <img
-                        src="https://api.dicebear.com/9.x/glass/svg?seed=Chase"
-                        alt="avatar"
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            display: "block",
-                            objectFit: "cover",
-                        }}
-                        />
+                      src={avatarUrl}
+                      alt="avatar"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "block",
+                        objectFit: "cover",
+                      }}
+                    />
                     </div>
 
                 <div
