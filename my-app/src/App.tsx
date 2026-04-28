@@ -1,16 +1,27 @@
 // src/App.tsx
 import { useEffect, useMemo, useState } from "react"
 import "./App.css"
-import { Servers } from "./data/updateBADA"
 import { calculateScore } from "./lib/score"
 import { fetchStaffCountsLast21Days } from "./lib/events"
 import ServerClicksModal from "./components/ServerClicksModal"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore"
 import { db } from "./lib/firebase"
 import { stores as localStores } from "./data/stores"
 import ServerProfilePage from "./pages/ServerProfilePage"
 
 const PROMO_WEIGHT = 0.15
+
+type ServerStats = {
+  id: string
+  code: string
+  legacyid?: string | null
+  name: string
+  sales: number
+  badaPercent: number
+  reviews: number
+  rewards: number
+  promoDollars: number
+}
 
 type StoreOption = {
   id: string
@@ -709,6 +720,124 @@ export default function App() {
   const [countsByStaff, setCountsByStaff] = useState<Record<string, { reviews: number; rewards: number }>>(
     {}
   )
+  const [servers, setServers] = useState<ServerStats[]>([])
+  const activeStore = homeStore || "6909"
+
+const activeStoreName =
+  localStores.find((s) => s.storeNumber === activeStore)?.name ??
+  `Store ${activeStore}`
+
+const handleSaveHomeStore = () => {
+  if (!selectedStore) return
+  localStorage.setItem("homeStore", selectedStore)
+  setHomeStore(selectedStore)
+  setStorePickerOpen(false)
+}
+
+  useEffect(() => {
+  let alive = true
+
+  ;(async () => {
+  try {
+    const counts = await fetchStaffCountsLast21Days(activeStore)
+
+    const staffSnap = await getDocs(
+      query(collection(db, "staffUsers"), where("storeNumber", "==", activeStore))
+    )
+
+    const liveStaff = staffSnap.docs.map((docSnap) => {
+      const data = docSnap.data() as {
+        code?: string
+        name?: string
+        legacyid?: string | null
+      }
+
+      return {
+        code: data.code ?? docSnap.id,
+        name: data.name ?? "Unnamed",
+        legacyid: data.legacyid ?? null,
+      }
+    })
+
+    const badaSnap = await getDocs(
+      query(
+        collection(db, "stores", activeStore, "badaPublishedWeeks"),
+        orderBy("weekStart", "desc"),
+        limit(3)
+      )
+    )
+
+    const badaAgg = new Map<
+      string,
+      { badaSum: number; count: number; sales: number; promos: number }
+    >()
+
+    badaSnap.docs.forEach((doc) => {
+      const data = doc.data() as {
+        rows?: Array<{
+          code?: string
+          sales?: number
+          badaPercent?: number
+          promosVoidsSum?: number
+        }>
+      }
+
+      ;(data.rows ?? []).forEach((row) => {
+        if (!row.code) return
+
+        const key = String(row.code)
+
+        const existing = badaAgg.get(key) ?? {
+          badaSum: 0,
+          count: 0,
+          sales: 0,
+          promos: 0,
+        }
+
+        existing.badaSum += Number(row.badaPercent ?? 0)
+        existing.count += 1
+        existing.sales += Number(row.sales ?? 0)
+        existing.promos += Number(row.promosVoidsSum ?? 0)
+
+        badaAgg.set(key, existing)
+      })
+    })
+
+    const rows: ServerStats[] = liveStaff.map((staff) => {
+      const bada = badaAgg.get(staff.code)
+
+      const directCounts = counts[staff.code] ?? { reviews: 0, rewards: 0 }
+      const legacyCounts = staff.legacyid
+        ? counts[staff.legacyid] ?? { reviews: 0, rewards: 0 }
+        : { reviews: 0, rewards: 0 }
+
+      return {
+        id: staff.code,
+        code: staff.code,
+        legacyid: staff.legacyid,
+        name: staff.name,
+
+        badaPercent: bada && bada.count > 0 ? bada.badaSum / bada.count : 0,
+        sales: bada?.sales ?? 0,
+        promoDollars: bada?.promos ?? 0,
+
+        reviews: directCounts.reviews + legacyCounts.reviews,
+        rewards: directCounts.rewards + legacyCounts.rewards,
+      }
+    })
+
+    if (alive) setServers(rows)
+  } catch (err) {
+    console.error("Failed to load leaderboard data:", err)
+  }
+})()
+
+  return () => {
+    alive = false
+  }
+}, [activeStore])
+      
+
 
   useEffect(() => {
   let alive = true
@@ -721,7 +850,6 @@ export default function App() {
         .map((docSnap) => {
           const data = docSnap.data() as {
             storeNumber?: string
-            storeEmail?: string
           }
 
           const storeNumber = String(data.storeNumber ?? docSnap.id)
@@ -749,66 +877,17 @@ export default function App() {
   }
 }, [])
 
-const activeStore = homeStore || "6909"
-const activeStoreName =
-  localStores.find((s) => s.storeNumber === activeStore)?.name ??
-  `Store ${activeStore}`
-
-const handleSaveHomeStore = () => {
-  if (!selectedStore) return
-  localStorage.setItem("homeStore", selectedStore)
-  setHomeStore(selectedStore)
-  setStorePickerOpen(false)
-}
-
-  useEffect(() => {
-  let alive = true
-
-  ;(async () => {
-    try {
-      const counts = await fetchStaffCountsLast21Days(activeStore)
-      if (alive) setCountsByStaff(counts)
-    } catch (err) {
-      console.error("Failed to load events:", err)
-    }
-  })()
-
-  return () => {
-    alive = false
-  }
-}, [activeStore])
-
-      
-
 
   const leaderboard = useMemo(() => {
-    return Servers
-      .map((server) => {
-        const c = countsByStaff[server.id] ?? { reviews: 0, rewards: 0 }
-
-        const merged = {
-          ...server,
-          reviews: c.reviews,
-          rewards: c.rewards,
-        }
-
-        return {
-          ...merged,
-          score: calculateScore(merged),
-          promoRate: merged.sales > 0 ? merged.promoDollars / merged.sales : 0,
-        }
-      })
+    return servers
+      .map((server) => ({
+        ...server,
+        score: calculateScore(server),
+        promoRate:
+          server.sales > 0 ? server.promoDollars / server.sales : 0,
+      }))
       .sort((a, b) => b.score - a.score)
-  }, [countsByStaff])
-
-  if (selectedProfile) {
-        return (
-          <ServerProfilePage
-            server={selectedProfile}
-            onBack={() => setSelectedProfile(null)}
-          />
-        )
-      }
+  }, [servers])
 
   return (
     <div className="appBg">
@@ -1017,7 +1096,7 @@ const handleSaveHomeStore = () => {
                                 fontWeight: 700,
                               }}
                             >
-                              {s.badaPercent}%
+                              {Number(s.badaPercent.toFixed(1))}%
                             </span>
                           </td>
 
