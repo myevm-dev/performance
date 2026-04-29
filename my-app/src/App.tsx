@@ -716,6 +716,7 @@ export default function App() {
     score: number
   } | null>(null)
   const [selectedProfile, setSelectedProfile] = useState<any | null>(null)
+  const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
 
 
   const [servers, setServers] = useState<ServerStats[]>([])
@@ -757,13 +758,37 @@ const handleSaveHomeStore = () => {
       }
     })
 
-    const badaSnap = await getDocs(
+    const latestBadaSnap = await getDocs(
       query(
         collection(db, "stores", activeStore, "badaPublishedWeeks"),
-        orderBy("weekStart", "desc"),
-        limit(3)
+        orderBy("publishedAt", "desc"),
+        limit(1)
       )
     )
+
+    if (alive) {
+      const latestPublishedAt = latestBadaSnap.docs[0]?.data()?.publishedAt
+
+      if (latestPublishedAt?.toDate) {
+        setLastBadaRefresh(
+          latestPublishedAt.toDate().toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "numeric",
+            day: "numeric",
+          })
+        )
+      } else {
+        setLastBadaRefresh("")
+      }
+    }
+
+  const badaSnap = await getDocs(
+    query(
+      collection(db, "stores", activeStore, "badaPublishedWeeks"),
+      orderBy("weekStart", "desc"),
+      limit(3)
+    )
+  )
 
     const badaAgg = new Map<
       string,
@@ -922,8 +947,8 @@ const handleSaveHomeStore = () => {
             {activeStoreName}
           </div>
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last BADA refresh:
-            Friday 4/2
+            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last BADA refresh:{" "}
+            {lastBadaRefresh || "Not published yet"}
           </p>
         </div>
 
