@@ -717,9 +717,7 @@ export default function App() {
   } | null>(null)
   const [selectedProfile, setSelectedProfile] = useState<any | null>(null)
 
-  const [countsByStaff, setCountsByStaff] = useState<Record<string, { reviews: number; rewards: number }>>(
-    {}
-  )
+
   const [servers, setServers] = useState<ServerStats[]>([])
   const activeStore = homeStore || "6909"
 
@@ -889,6 +887,15 @@ const handleSaveHomeStore = () => {
       .sort((a, b) => b.score - a.score)
   }, [servers])
 
+  if (selectedProfile) {
+    return (
+      <ServerProfilePage
+        server={selectedProfile}
+        onBack={() => setSelectedProfile(null)}
+      />
+    )
+  }
+
   return (
     <div className="appBg">
       <div className="nav">
@@ -1051,6 +1058,19 @@ const handleSaveHomeStore = () => {
                           key={s.id}
                           className={rowClass}
                           onClick={() => {
+                            setSelectedStaffId(s.id)
+                            setSelectedStaffName(s.name)
+
+                            setSelectedScoreServer({
+                              name: s.name,
+                              badaPercent: s.badaPercent,
+                              reviews: s.reviews,
+                              rewards: s.rewards,
+                              promoDollars: s.promoDollars,
+                              sales: s.sales,
+                              score: s.score,
+                            })
+
                             setSelectedProfile({
                               id: s.id,
                               name: s.name,
@@ -1065,6 +1085,7 @@ const handleSaveHomeStore = () => {
                               promoRate: s.promoRate,
                               avatarSeed: s.id,
                             })
+
                           }}
                           style={{ cursor: "pointer" }}
                         >
