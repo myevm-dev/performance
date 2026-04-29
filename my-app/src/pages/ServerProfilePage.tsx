@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { getGlassGradient } from "../lib/glassColors"
 
 type ServerProfile = {
   id: string
@@ -346,8 +347,7 @@ export default function ServerProfilePage({
     { id: "top-company-2", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
   ]
 
-  const avatarUrl = `https://api.dicebear.com/7.x/glass/svg?seed=${server.avatarSeed || server.id}`
-
+  const gradient = getGlassGradient(server.avatarSeed || server.id)
 
   const visibleBadgeCount = 5
   const maxBadgeStart = Math.max(0, badges.length - visibleBadgeCount)
@@ -362,6 +362,14 @@ export default function ServerProfilePage({
   const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
   const promoPenaltyColor = getPromoPenaltyColor(promoRate)
   const badaBars = useMemo(() => buildBadaBars(badaPercent), [badaPercent])
+  const chartMin = 80
+  const chartMax = Math.max(200, ...badaBars)
+  const chartRange = chartMax - chartMin
+
+  const getChartY = (value: number) => {
+    const safeValue = Math.max(chartMin, value)
+    return ((safeValue - chartMin) / chartRange) * 100
+  }
   const activityRows = useMemo(() => buildDummyActivity(reviews, rewards), [reviews, rewards])
 
   const filteredActivity = useMemo(() => {
@@ -396,7 +404,7 @@ export default function ServerProfilePage({
         <div
           style={{
             height: 4,
-            background: "linear-gradient(90deg, rgba(253,1,245,0.9), rgba(1,252,252,0.9))",
+            background: `linear-gradient(90deg, ${gradient.start}, ${gradient.end})`,
           }}
         />
 
@@ -637,16 +645,45 @@ export default function ServerProfilePage({
                         margin: "0 auto",
                     }}
                     >
-                    <img
-                      src={avatarUrl}
-                      alt="avatar"
+                    <div
                       style={{
                         width: "100%",
                         height: "100%",
-                        display: "block",
-                        objectFit: "cover",
+                        borderRadius: 24,
+                        overflow: "hidden",
+                        position: "relative",
+                        background: `linear-gradient(135deg, ${gradient.start}, ${gradient.end})`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
-                    />
+                    >
+                      {/* Letter */}
+                      <div
+                        style={{
+                          fontSize: 42,
+                          fontWeight: 900,
+                          color: "rgba(0,0,0,0.75)",
+                          letterSpacing: 1,
+                          zIndex: 2,
+                        }}
+                      >
+                        {server.name?.charAt(0) ?? "?"}
+                      </div>
+
+                      {/* Glass overlay */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: 24,
+                          background:
+                            "linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05))",
+                          pointerEvents: "none",
+                          zIndex: 1,
+                        }}
+                      />
+                    </div>
                     </div>
 
                 <div
@@ -850,18 +887,21 @@ export default function ServerProfilePage({
                       position: "absolute",
                       left: 0,
                       right: 0,
-                      bottom: `${(130 / 180) * 100}%`,
+                      bottom: `${getChartY(140)}%`,
                       height: 2,
                       background: "rgba(128, 239, 239, 0.9)",
                       zIndex: 2,
                     }}
                   />
-                    {[150, 120, 90, 60].map((tick) => (
+                    {[chartMax, 160, 140, 120, 100].map((tick) => (
                       <div
                         key={tick}
                         style={{
+                          position: "absolute",
+                          left: 0,
+                          right: 0,
+                          bottom: `${getChartY(tick)}%`,
                           borderTop: "1px dashed rgba(255,255,255,0.10)",
-                          position: "relative",
                         }}
                       >
                         <span
@@ -897,7 +937,7 @@ export default function ServerProfilePage({
                             flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "flex-end",
-                            gap: 10,
+                            gap: 0,
                             height: "100%",
                           }}
                         >
@@ -905,15 +945,16 @@ export default function ServerProfilePage({
                             style={{
                               width: "100%",
                               maxWidth: 52,
-                              height: `${(value / 180) * 100}%`,
+                              height: `${getChartY(value)}%`,
                               minHeight: 18,
                               borderRadius: 14,
                               background:
-                                value >= 130
+                                value >= 140
                                   ? "linear-gradient(180deg, rgba(34,197,94,0.95), rgba(16,185,129,0.82))"
                                   : "linear-gradient(180deg, rgba(239,68,68,0.95), rgba(185,28,28,0.82))",
+
                               boxShadow:
-                                value >= 130
+                                value >= 140
                                   ? "0 8px 24px rgba(34,197,94,0.18)"
                                   : "0 8px 24px rgba(239,68,68,0.18)",
                               border: "1px solid rgba(255,255,255,0.10)",
@@ -929,9 +970,7 @@ export default function ServerProfilePage({
                             {formatPercent(value)}
                           </div>
 
-                          <div style={{ fontSize: 11, opacity: 0.6, fontWeight: 700 }}>
-                            W{index + 1}
-                          </div>
+                         
                         </div>
                       ))}
                     </div>
@@ -947,7 +986,7 @@ export default function ServerProfilePage({
                   >
                     <StatCard
                       label="Target"
-                      value="130.0%"
+                      value="140.0%"
                       accent="#67e8f9"
                     />
                     <StatCard
@@ -957,8 +996,8 @@ export default function ServerProfilePage({
                     />
                     <StatCard
                       label="Gap"
-                      value={formatPercent(Math.abs(130 - badaPercent))}
-                      accent={badaPercent >= 130 ? "#22c55e" : "#ef4444"}
+                      value={formatPercent(Math.abs(140 - badaPercent))}
+                      accent={badaPercent >= 140 ? "#22c55e" : "#ef4444"}
                     />
                   </div>
                 </div>
