@@ -266,7 +266,7 @@ export const stores: Store[] = [
   },
   {
     storeNumber: "8877",
-    name: "Las Cruces - Battan",
+    name: "Las Cruces - Bataan",
     email: "dennys8877@wksusa.com",
     districtId: "1C",
     regionId: regionFromDistrict("1C"),
