@@ -1122,7 +1122,7 @@ const handleSaveHomeStore = () => {
                           <td style={{ textAlign: "right" }}>{s.reviews}</td>
                           <td style={{ textAlign: "right" }}>{s.rewards}</td>
                           <td style={{ textAlign: "right", color: getPromoPenaltyColor(s.promoRate), fontWeight: 800 }}>
-                            ${s.promoDollars}
+                            ${s.promoDollars.toFixed(2)}
                           </td>
                         </tr>
                       )
