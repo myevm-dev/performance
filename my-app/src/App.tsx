@@ -8,6 +8,7 @@ import { collection, getDocs, query, where, orderBy, limit } from "firebase/fire
 import { db } from "./lib/firebase"
 import { stores as localStores } from "./data/stores"
 import ServerProfilePage from "./pages/ServerProfilePage"
+import { Routes, Route, useNavigate, useParams } from "react-router-dom"
 
 const PROMO_WEIGHT = 0.15
 
@@ -667,7 +668,150 @@ function HomeStoreModal({
   )
 }
 
-export default function App() {
+function ServerProfileRoute() {
+  const { staffCode } = useParams()
+  const navigate = useNavigate()
+
+  const [server, setServer] = useState<any | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadServerProfile() {
+      if (!staffCode) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const staffSnap = await getDocs(
+          query(collection(db, "staffUsers"), where("code", "==", staffCode))
+        )
+
+        if (staffSnap.empty) {
+          if (alive) setServer(null)
+          return
+        }
+
+        const staffDoc = staffSnap.docs[0]
+        const staffData = staffDoc.data() as {
+          code?: string
+          name?: string
+          legacyid?: string | null
+          storeNumber?: string
+        }
+
+        const storeNumber = String(staffData.storeNumber ?? "")
+        const storeName =
+          localStores.find((store) => store.storeNumber === storeNumber)?.name ??
+          `Store ${storeNumber}`
+
+        const counts = await fetchStaffCountsLast21Days(storeNumber)
+
+        const directCounts = counts[String(staffData.code ?? staffDoc.id)] ?? {
+          reviews: 0,
+          rewards: 0,
+        }
+
+        const legacyCounts = staffData.legacyid
+          ? counts[String(staffData.legacyid)] ?? { reviews: 0, rewards: 0 }
+          : { reviews: 0, rewards: 0 }
+
+        const badaSnap = await getDocs(
+          query(
+            collection(db, "stores", storeNumber, "badaPublishedWeeks"),
+            orderBy("weekStart", "desc"),
+            limit(3)
+          )
+        )
+
+        let badaSum = 0
+        let badaCount = 0
+        let sales = 0
+        let promoDollars = 0
+
+        badaSnap.docs.forEach((docSnap) => {
+          const data = docSnap.data() as {
+            rows?: Array<{
+              code?: string
+              sales?: number
+              badaPercent?: number
+              promosVoidsSum?: number
+            }>
+          }
+
+          ;(data.rows ?? []).forEach((row) => {
+            if (String(row.code) !== String(staffData.code)) return
+
+            badaSum += Number(row.badaPercent ?? 0)
+            badaCount += 1
+            sales += Number(row.sales ?? 0)
+            promoDollars += Number(row.promosVoidsSum ?? 0)
+          })
+        })
+
+        const badaPercent = badaCount > 0 ? badaSum / badaCount : 0
+        const reviews = directCounts.reviews + legacyCounts.reviews
+        const rewards = directCounts.rewards + legacyCounts.rewards
+        const promoRate = sales > 0 ? promoDollars / sales : 0
+
+        const profileServer = {
+          id: String(staffData.code ?? staffDoc.id),
+          code: String(staffData.code ?? staffDoc.id),
+          name: staffData.name ?? "Unnamed",
+          storeNumber,
+          storeName,
+          score: calculateScore({
+            sales,
+            badaPercent,
+            reviews,
+            rewards,
+            promoDollars,
+          }),
+          badaPercent,
+          reviews,
+          rewards,
+          promoDollars,
+          sales,
+          promoRate,
+          avatarSeed: String(staffData.code ?? staffDoc.id),
+        }
+
+        if (alive) setServer(profileServer)
+      } catch (error) {
+        console.error("Failed to load public server profile:", error)
+        if (alive) setServer(null)
+      } finally {
+        if (alive) setLoading(false)
+      }
+    }
+
+    loadServerProfile()
+
+    return () => {
+      alive = false
+    }
+  }, [staffCode])
+
+  if (loading) {
+    return <div className="appBg" style={{ color: "white", padding: 24 }}>Loading profile...</div>
+  }
+
+  if (!server) {
+    return <div className="appBg" style={{ color: "white", padding: 24 }}>Profile not found</div>
+  }
+
+  return (
+    <ServerProfilePage
+      server={server}
+      onBack={() => navigate("/")}
+    />
+  )
+}
+
+function LeaderboardApp() {
+  const navigate = useNavigate()
   const [infoOpen, setInfoOpen] = useState(false)
   const [mode, setMode] = useState<ViewMode>("store")
   const [clicksOpen, setClicksOpen] = useState(false)
@@ -688,7 +832,8 @@ export default function App() {
     sales: number
     score: number
   } | null>(null)
-  const [selectedProfile, setSelectedProfile] = useState<any | null>(null)
+
+
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
 
 
@@ -885,14 +1030,6 @@ const handleSaveHomeStore = () => {
       .sort((a, b) => b.score - a.score)
   }, [servers])
 
-  if (selectedProfile) {
-    return (
-      <ServerProfilePage
-        server={selectedProfile}
-        onBack={() => setSelectedProfile(null)}
-      />
-    )
-  }
 
   return (
     <div className="appBg">
@@ -1069,20 +1206,7 @@ const handleSaveHomeStore = () => {
                               score: s.score,
                             })
 
-                            setSelectedProfile({
-                              id: s.id,
-                              name: s.name,
-                              storeNumber: activeStore,
-                              storeName: activeStoreName,
-                              score: s.score,
-                              badaPercent: s.badaPercent,
-                              reviews: s.reviews,
-                              rewards: s.rewards,
-                              promoDollars: s.promoDollars,
-                              sales: s.sales,
-                              promoRate: s.promoRate,
-                              avatarSeed: s.id,
-                            })
+                          navigate(`/profile/${s.code}`)
 
                           }}
                           style={{ cursor: "pointer" }}
@@ -1164,5 +1288,14 @@ const handleSaveHomeStore = () => {
         server={selectedScoreServer}
       />
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LeaderboardApp />} />
+      <Route path="/profile/:staffCode" element={<ServerProfileRoute />} />
+    </Routes>
   )
 }
