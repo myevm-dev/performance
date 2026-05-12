@@ -173,9 +173,16 @@ function getPromoPenaltyColor(promoRate: number) {
   if (promoRate <= 0.0075) return "#ef4444" // 0.51–0.75%
   return "#b91c1c" // > 0.75%
 }
-
-function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  if (!open) return null
+  function InfoModal({
+    open,
+    onClose,
+    onOpenChangelog,
+  }: {
+    open: boolean
+    onClose: () => void
+    onOpenChangelog: () => void
+  }) {
+    if (!open) return null
 
   const weighted = (base: number) => Math.round(base * PROMO_WEIGHT)
 
@@ -188,88 +195,110 @@ function InfoModal({ open, onClose }: { open: boolean; onClose: () => void }) {
         aria-modal="true"
       >
         <div className="modalHeader">
-          <div />
+        <div />
 
-          <div className="modalHeaderCenter">
-            <div className="modalTitle">How scoring works</div>
-            <div className="modalSub">Scoring v1.2.1</div>
-          </div>
-
-          <button className="iconBtn" onClick={onClose} aria-label="Close">
-            ✕
+        <div className="modalHeaderCenter">
+          <div className="modalTitle">How scoring works</div>
+          <button
+            type="button"
+            className="modalSub"
+            onClick={onOpenChangelog}
+            title="View changelog"
+            style={{
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+              textDecoration: "underline dotted",
+            }}
+          >
+            Scoring v1.3.1
           </button>
         </div>
 
-        <div className="modalBody">
-          <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 130)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷
-            (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
-          </div>
+        <button className="iconBtn" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </div>
 
-          <div className="grid2">
-            <div className="panel">
-              <div className="panelTitle">How the score is weighted</div>
-              <br/>
+      <div className="modalBody">
+        <div className="codeBlock">
+          Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − (PromoPenalty × {PROMO_WEIGHT})
+        </div>
 
-              <ul className="list">
-                <li>
-                  <b>BADA:</b> 46% of the score
-                </li>
-                <li>
-                  <b>Reviews:</b> 39% of the score
-                </li>
-                <li>
-                  <b>Rewards:</b> 15% of the score
-                </li>
-              </ul>
-              <br/>
+        <div className="grid2">
+          <div className="panel">
+            <div className="panelTitle">How the score is weighted</div>
+            <br />
 
-              <div className="hint">
-                BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score. BADA is
-                scaled against 130%. Reviews are expected at 1 per $500 in sales. Rewards are
-                expected at 1 per $800 in sales.
-              </div>
+            <ul className="list">
+              <li>
+                <b>BADA:</b> 46% of the score
+              </li>
+              <li>
+                <b>Reviews:</b> 39% of the score
+              </li>
+              <li>
+                <b>Rewards:</b> 15% of the score
+              </li>
+            </ul>
+            <br />
 
-              <div className="hint" style={{ marginTop: "10px" }}>
-                We mapped review, reward, and promo expectations to sales, so opportunity is
-                proportional to sales volume to account for varience in business or quantity of shifts.
-              </div>
+            <div className="hint">
+              BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
+              BADA is scaled against a 140% target. A server at 140% BADA earns the full BADA
+              portion of the score. A server above 140% can earn extra BADA points, while a
+              server below 140% earns a proportional amount.
             </div>
 
-            <div className="panel">
-              <div className="panelTitle">Promo/Void penalty</div>
-              <div className="hint">
-                Promos/voids are evaluated as % of sales. The tier below shows the base penalty, and
-                the actual score deduction is weighted at {(PROMO_WEIGHT * 100).toFixed(0)}%.
+            <div className="hint" style={{ marginTop: "10px" }}>
+              Reviews are scaled against a target of 25 reviews, and Rewards are scaled against
+              a target of 10 rewards. This keeps the leaderboard simple while still rewarding
+              servers who drive guest engagement beyond BADA performance.
+            </div>
+
+            <div className="hint" style={{ marginTop: "10px" }}>
+              Promo and void activity is evaluated as a percentage of sales. Higher promo/void
+              rates reduce the final score so the leaderboard rewards both sales performance
+              and clean order accuracy.
+            </div>
+          </div>
+
+          <div className="panel">
+            <div className="panelTitle">Promo/Void penalty</div>
+            <div className="hint">
+              Promos/voids are evaluated as % of sales. The tier below shows the base penalty,
+              and the actual score deduction is weighted at {(PROMO_WEIGHT * 100).toFixed(0)}%.
+            </div>
+
+            <div className="penaltyTable">
+              <div className="penRow" style={{ color: "rgba(105, 213, 118, 0.92)" }}>
+                <span>≤ 0.20% of sales</span>
+                <span>0</span>
               </div>
 
-              <div className="penaltyTable">
-                <div className="penRow" style={{ color: "rgba(105, 213, 118, 0.92)" }}>
-                  <span>≤ 0.20% of sales</span>
-                  <span>0</span>
-                </div>
-                <div className="penRow" style={{ color: "#fca5a5" }}>
-                  <span>0.21–0.30%</span>
-                  <span>−50 (−{weighted(50)} pts)</span>
-                </div>
+              <div className="penRow" style={{ color: "#fca5a5" }}>
+                <span>0.21–0.30%</span>
+                <span>−50 (−{weighted(50)} pts)</span>
+              </div>
 
-                <div className="penRow" style={{ color: "#f87171" }}>
-                  <span>0.31–0.50%</span>
-                  <span>−100 (−{weighted(100)} pts)</span>
-                </div>
+              <div className="penRow" style={{ color: "#f87171" }}>
+                <span>0.31–0.50%</span>
+                <span>−100 (−{weighted(100)} pts)</span>
+              </div>
 
-                <div className="penRow" style={{ color: "#ef4444" }}>
-                  <span>0.51–0.75%</span>
-                  <span>−175 (−{weighted(175)} pts)</span>
-                </div>
+              <div className="penRow" style={{ color: "#ef4444" }}>
+                <span>0.51–0.75%</span>
+                <span>−175 (−{weighted(175)} pts)</span>
+              </div>
 
-                <div className="penRow" style={{ color: "#b91c1c" }}>
-                  <span>&gt; 0.75%</span>
-                  <span>−250 (−{weighted(250)} pts)</span>
-                </div>
+              <div className="penRow" style={{ color: "#b91c1c" }}>
+                <span>&gt; 0.75%</span>
+                <span>−250 (−{weighted(250)} pts)</span>
               </div>
             </div>
           </div>
+        </div>
 
           <div className="pillRow">
             <span className="pill">Use your QR codes</span>
@@ -731,8 +760,14 @@ function ServerProfileRoute() {
         let sales = 0
         let promoDollars = 0
 
+        const badaWeeks: Array<{
+          weekLabel: string
+          badaPercent: number | null
+        }> = []
+
         badaSnap.docs.forEach((docSnap) => {
           const data = docSnap.data() as {
+            weekStart?: any
             rows?: Array<{
               code?: string
               sales?: number
@@ -741,16 +776,39 @@ function ServerProfileRoute() {
             }>
           }
 
-          ;(data.rows ?? []).forEach((row) => {
-            if (String(row.code) !== String(staffData.code)) return
+          const weekStartDate = data.weekStart?.toDate?.()
 
-            badaSum += Number(row.badaPercent ?? 0)
-            badaCount += 1
-            sales += Number(row.sales ?? 0)
-            promoDollars += Number(row.promosVoidsSum ?? 0)
+          const weekLabel = weekStartDate
+            ? weekStartDate.toLocaleDateString("en-US", {
+                month: "numeric",
+                day: "numeric",
+              })
+            : docSnap.id
+
+          const serverRow = (data.rows ?? []).find(
+            (row) => String(row.code) === String(staffData.code)
+          )
+
+          if (!serverRow) {
+            badaWeeks.push({
+              weekLabel,
+              badaPercent: null,
+            })
+            return
+          }
+
+          const rowBada = Number(serverRow.badaPercent ?? 0)
+
+          badaWeeks.push({
+            weekLabel,
+            badaPercent: rowBada,
           })
-        })
 
+          badaSum += rowBada
+          badaCount += 1
+          sales += Number(serverRow.sales ?? 0)
+          promoDollars += Number(serverRow.promosVoidsSum ?? 0)
+        })
         const badaPercent = badaCount > 0 ? badaSum / badaCount : 0
         const reviews = directCounts.reviews + legacyCounts.reviews
         const rewards = directCounts.rewards + legacyCounts.rewards
@@ -760,6 +818,7 @@ function ServerProfileRoute() {
           id: String(staffData.code ?? staffDoc.id),
           code: String(staffData.code ?? staffDoc.id),
           name: staffData.name ?? "Unnamed",
+          
           storeNumber,
           storeName,
           score: calculateScore({
@@ -775,6 +834,7 @@ function ServerProfileRoute() {
           promoDollars,
           sales,
           promoRate,
+          badaWeeks,
           avatarSeed: String(staffData.code ?? staffDoc.id),
         }
 
@@ -810,6 +870,63 @@ function ServerProfileRoute() {
   )
 }
 
+function ChangelogModal({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
+  if (!open) return null
+
+  return (
+    <div className="modalOverlay" onClick={onClose} role="presentation">
+      <div
+        className="modalCard"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        style={{ maxWidth: 560 }}
+      >
+        <div className="modalHeader">
+          <div />
+
+          <div className="modalHeaderCenter">
+            <div className="modalTitle">Changelog</div>
+            <div className="modalSub">Scoring v1.3.1</div>
+          </div>
+
+          <button className="iconBtn" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </div>
+
+        <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">v1.3.1</div>
+
+            <div className="hint" style={{ marginTop: 10 }}>
+              BADA target was increased from 130% to 140%.
+            </div>
+
+            <div className="hint" style={{ marginTop: 10 }}>
+              This means the BADA portion of the score is now scaled against a higher
+              performance target. Servers at 140% BADA receive the full BADA score
+              allocation. Servers below 140% receive a proportional amount, and servers
+              above 140% can earn additional BADA points.
+            </div>
+
+            <div className="hint" style={{ marginTop: 10 }}>
+              The leaderboard color threshold was also updated so BADA under 140% shows
+              red, while 140% and above shows green.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function LeaderboardApp() {
   const navigate = useNavigate()
   const [infoOpen, setInfoOpen] = useState(false)
@@ -832,6 +949,8 @@ function LeaderboardApp() {
     sales: number
     score: number
   } | null>(null)
+
+  const [changelogOpen, setChangelogOpen] = useState(false)
 
 
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
@@ -1235,7 +1354,7 @@ const handleSaveHomeStore = () => {
                           <td style={{ textAlign: "right" }}>
                             <span
                               style={{
-                                color: s.badaPercent >= 130 ? "#22c55e" : "#ef4444",
+                                color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
                                 fontWeight: 700,
                               }}
                             >
@@ -1263,7 +1382,15 @@ const handleSaveHomeStore = () => {
         </div>
       </main>
 
-      <InfoModal open={infoOpen} onClose={() => setInfoOpen(false)} />
+      <InfoModal
+        open={infoOpen}
+        onClose={() => setInfoOpen(false)}
+        onOpenChangelog={() => setChangelogOpen(true)}
+      />
+      <ChangelogModal
+        open={changelogOpen}
+        onClose={() => setChangelogOpen(false)}
+      />
 
       {/* ✅ Render the modal once, outside the table */}
       <ServerClicksModal

@@ -14,6 +14,10 @@ type ServerProfile = {
   sales?: number
   promoRate?: number
   avatarSeed?: string
+  badaWeeks?: Array<{
+    weekLabel: string
+    badaPercent: number | null
+  }>
 }
 
 type ServerProfilePageProps = {
@@ -21,9 +25,6 @@ type ServerProfilePageProps = {
   onBack: () => void
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max)
-}
 
 function formatMoney(value?: number) {
   return `$${(value ?? 0).toLocaleString()}`
@@ -50,7 +51,7 @@ function getPromoPenaltyColor(promoRate: number) {
 }
 
 function getBadaColor(badaPercent: number) {
-  if (badaPercent >= 130) return "#22c55e"
+  if (badaPercent >= 140) return "#22c55e"
   if (badaPercent >= 115) return "#84cc16"
   if (badaPercent >= 100) return "#facc15"
   return "#ef4444"
@@ -80,19 +81,16 @@ function buildDummyActivity(reviews: number, rewards: number) {
   return rows.slice(0, 12)
 }
 
-function buildBadaBars(currentBada: number) {
-  const base = currentBada || 0
-  const raw = [
-    Math.max(base - 14, 40),
-    Math.max(base - 7, 50),
-    Math.max(base - 3, 60),
-    base,
-    Math.max(base - 5, 55),
-    Math.max(base + 2, 60),
-    base,
-  ]
-
-  return raw.map((v) => clamp(v, 30, 180))
+function buildBadaBars(
+  weeks?: Array<{
+    weekLabel: string
+    badaPercent: number | null
+  }>
+) {
+  return (weeks ?? []).map((week) => ({
+    weekLabel: week.weekLabel,
+    value: week.badaPercent,
+  }))
 }
 
 function StatCard({
@@ -159,7 +157,7 @@ function ScoreBreakdownModal({
   const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
   const promoPenaltyBase = getPromoPenaltyBase(promoRate)
   const promoWeighted = promoPenaltyBase * 0.15
-  const badaPoints = 460 * (badaPercent / 130)
+  const badaPoints = 460 * (badaPercent / 140)
   const reviewPoints = 390 * (reviews / 25)
   const rewardPoints = 150 * (rewards / 10)
 
@@ -238,7 +236,7 @@ function ScoreBreakdownModal({
               lineHeight: 1.6,
             }}
           >
-            Score = (460 × (BADA% ÷ 130)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) - (PromoPenalty × 0.15)
+            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) - (PromoPenalty × 0.15)
           </div>
 
           <div
@@ -265,7 +263,7 @@ function ScoreBreakdownModal({
             }}
           >
             {[
-              [`460 × (${badaPercent} ÷ 130)`, badaPoints.toFixed(2)],
+              [`460 × (${badaPercent} ÷ 140)`, badaPoints.toFixed(2)],
               [`390 × (${reviews} ÷ 25)`, reviewPoints.toFixed(2)],
               [`150 × (${rewards} ÷ 10)`, rewardPoints.toFixed(2)],
               [`${promoPenaltyBase} × 0.15`, `-${promoWeighted.toFixed(2)}`],
@@ -361,9 +359,15 @@ export default function ServerProfilePage({
   const score = server.score ?? 0
   const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
   const promoPenaltyColor = getPromoPenaltyColor(promoRate)
-  const badaBars = useMemo(() => buildBadaBars(badaPercent), [badaPercent])
+
+  const badaBars = useMemo(() => buildBadaBars(server.badaWeeks), [server.badaWeeks])
+
+  const chartValues = badaBars
+    .map((bar) => bar.value)
+    .filter((value): value is number => typeof value === "number")
+
   const chartMin = 80
-  const chartMax = Math.max(200, ...badaBars)
+  const chartMax = Math.max(200, ...chartValues)
   const chartRange = chartMax - chartMin
 
   const getChartY = (value: number) => {
@@ -928,51 +932,89 @@ export default function ServerProfilePage({
                         paddingTop: 6,
                       }}
                     >
-                      {badaBars.map((value, index) => (
-                        <div
-                          key={`${value}-${index}`}
-                          style={{
-                            flex: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            gap: 0,
-                            height: "100%",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "100%",
-                              maxWidth: 52,
-                              height: `${getChartY(value)}%`,
-                              minHeight: 18,
-                              borderRadius: 14,
-                              background:
-                                value >= 140
-                                  ? "linear-gradient(180deg, rgba(34,197,94,0.95), rgba(16,185,129,0.82))"
-                                  : "linear-gradient(180deg, rgba(239,68,68,0.95), rgba(185,28,28,0.82))",
+                      {badaBars.map((bar, index) => {
+                        const hasValue = typeof bar.value === "number"
+                        const value = bar.value ?? 0
 
-                              boxShadow:
-                                value >= 140
-                                  ? "0 8px 24px rgba(34,197,94,0.18)"
-                                  : "0 8px 24px rgba(239,68,68,0.18)",
-                              border: "1px solid rgba(255,255,255,0.10)",
+                        return (
+                          <div
+                            key={`${bar.weekLabel}-${index}`}
+                            style={{
+                              flex: 1,
                               display: "flex",
-                              alignItems: "flex-end",
-                              justifyContent: "center",
-                              paddingBottom: 8,
-                              fontSize: 10,
-                              fontWeight: 900,
-                              color: "white",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "flex-end",
+                              gap: 6,
+                              height: "100%",
                             }}
                           >
-                            {formatPercent(value)}
-                          </div>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 900,
+                                opacity: 0.72,
+                                minHeight: 14,
+                                textAlign: "center",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {bar.weekLabel}
+                            </div>
 
-                         
-                        </div>
-                      ))}
+                            {hasValue ? (
+                              <div
+                                style={{
+                                  width: "100%",
+                                  maxWidth: 52,
+                                  height: `${getChartY(value)}%`,
+                                  minHeight: 18,
+                                  borderRadius: 14,
+                                  background:
+                                    value >= 140
+                                      ? "linear-gradient(180deg, rgba(34,197,94,0.95), rgba(16,185,129,0.82))"
+                                      : "linear-gradient(180deg, rgba(239,68,68,0.95), rgba(185,28,28,0.82))",
+                                  boxShadow:
+                                    value >= 140
+                                      ? "0 8px 24px rgba(34,197,94,0.18)"
+                                      : "0 8px 24px rgba(239,68,68,0.18)",
+                                  border: "1px solid rgba(255,255,255,0.10)",
+                                  display: "flex",
+                                  alignItems: "flex-end",
+                                  justifyContent: "center",
+                                  paddingBottom: 8,
+                                  fontSize: 10,
+                                  fontWeight: 900,
+                                  color: "white",
+                                }}
+                              >
+                                {formatPercent(value)}
+                              </div>
+                            ) : (
+                              <div
+                                style={{
+                                  width: "100%",
+                                  maxWidth: 52,
+                                  height: 42,
+                                  borderRadius: 14,
+                                  border: "1px dashed rgba(255,255,255,0.18)",
+                                  background: "rgba(255,255,255,0.04)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: 11,
+                                  fontWeight: 900,
+                                  color: "rgba(255,255,255,0.55)",
+                                }}
+                              >
+                                N/A
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                          
+                        
                     </div>
                   </div>
 
