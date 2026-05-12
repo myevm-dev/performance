@@ -1161,12 +1161,13 @@ const handleSaveHomeStore = () => {
 
       <main className="container">
         <div className="hero">
-          <h1 className="title">Server Leaderboard V2 Coming Soon</h1>
-
+        <h1 className="title" style={{ fontSize: 36 }}>
+          Server Leaderboard V2 Coming Soon
+        </h1>
           <div
             style={{
               marginTop: 6,
-              fontSize: 20,
+              fontSize: 24,
               color: "cyan",
               fontWeight: 700,
               opacity: 0.75,
