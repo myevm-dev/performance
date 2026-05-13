@@ -87,10 +87,12 @@ function buildBadaBars(
     badaPercent: number | null
   }>
 ) {
-  return (weeks ?? []).map((week) => ({
-    weekLabel: week.weekLabel,
-    value: week.badaPercent,
-  }))
+  return [...(weeks ?? [])]
+    .reverse()
+    .map((week) => ({
+      weekLabel: week.weekLabel,
+      value: week.badaPercent,
+    }))
 }
 
 function StatCard({
