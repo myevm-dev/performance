@@ -330,28 +330,11 @@ export default function ServerProfilePage({
 }: ServerProfilePageProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
   const [activityFilter, setActivityFilter] = useState<"all" | "review" | "rewards">("all")
-  const [badgeStart, setBadgeStart] = useState(0)
 
   if (!server) return null
 
 
-  const badges = [
-    { id: "first-review", label: "First Review", image: "/badges/firstreviewbadge.png", unlocked: true },
-    { id: "five-reviews", label: "5 Reviews", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-store", label: "Top Store", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-district", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-region", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-company", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-district-2", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-region-2", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-company-2", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
-  ]
-
   const gradient = getGlassGradient(server.avatarSeed || server.id)
-
-  const visibleBadgeCount = 5
-  const maxBadgeStart = Math.max(0, badges.length - visibleBadgeCount)
-  const visibleBadges = badges.slice(badgeStart, badgeStart + visibleBadgeCount)
 
   const badaPercent = server.badaPercent ?? 0
   const reviews = server.reviews ?? 0
@@ -411,203 +394,7 @@ export default function ServerProfilePage({
           }}
         />
 
-        <div
-          style={{
-            padding: "20px 20px 16px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 16,
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={onBack}
-              style={{
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.06)",
-                color: "white",
-                borderRadius: 999,
-                padding: "10px 16px",
-                fontWeight: 900,
-                fontSize: 14,
-                cursor: "pointer",
-              }}
-            >
-              ← Back
-            </button>
-
-            <div>
-              <div style={{ fontSize: 26, fontWeight: 950, lineHeight: 1.05 }}>
-                {server.name}
-              </div>
-              <div style={{ marginTop: 4, fontSize: 13, opacity: 0.68 }}>
-                {server.storeName || `Store ${server.storeNumber || ""}`}
-              </div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setBadgeStart((prev) => Math.max(0, prev - 1))}
-              disabled={badgeStart === 0}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: badgeStart === 0 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                color: "white",
-                cursor: badgeStart === 0 ? "not-allowed" : "pointer",
-                opacity: badgeStart === 0 ? 0.45 : 1,
-                fontWeight: 900,
-                flexShrink: 0,
-              }}
-              aria-label="Previous badges"
-              title="Previous badges"
-            >
-              ‹
-            </button>
-
-            <div
-              style={{
-                flex: 1,
-                minWidth: 0,
-                display: "grid",
-                gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                gap: 8,
-                alignItems: "start",
-              }}
-            >
-              {visibleBadges.map((badge) => (
-                <button
-                  key={badge.id}
-                  type="button"
-                  title={badge.label}
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    cursor: "pointer",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 4,
-                    width: "100%",
-                    minWidth: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "100%",
-                      maxWidth: 72,
-                      aspectRatio: "1 / 1",
-                      borderRadius: 16,
-                      overflow: "hidden",
-                      border: badge.unlocked
-                        ? "1px solid rgba(255,255,255,0.14)"
-                        : "1px solid rgba(255,255,255,0.06)",
-                      background: "rgba(255,255,255,0.04)",
-                      boxShadow: badge.unlocked ? "0 8px 20px rgba(0,0,0,0.22)" : "none",
-                      opacity: badge.unlocked ? 1 : 0.35,
-                      filter: badge.unlocked ? "none" : "grayscale(1)",
-                    }}
-                  >
-                    <img
-                      src={badge.image}
-                      alt={badge.label}
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                      }}
-                    />
-                  </div>
-
-                  <div
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 800,
-                      opacity: badge.unlocked ? 0.85 : 0.45,
-                      textAlign: "center",
-                      lineHeight: 1.2,
-                      width: "100%",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {badge.label}
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setBadgeStart((prev) => Math.min(maxBadgeStart, prev + 1))}
-              disabled={badgeStart >= maxBadgeStart}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background:
-                  badgeStart >= maxBadgeStart ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
-                color: "white",
-                cursor: badgeStart >= maxBadgeStart ? "not-allowed" : "pointer",
-                opacity: badgeStart >= maxBadgeStart ? 0.45 : 1,
-                fontWeight: 900,
-                flexShrink: 0,
-              }}
-              aria-label="Next badges"
-              title="Next badges"
-            >
-              ›
-            </button>
-
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 12px",
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
-                fontSize: 12,
-                fontWeight: 800,
-                opacity: 0.88,
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  background: "rgba(222, 18, 18, 0.92)",
-                  display: "inline-block",
-                }}
-              />
-              Demo WIP
-            </div>
-
-          </div>
-        </div>
+        
 
         <div
           style={{
@@ -617,7 +404,50 @@ export default function ServerProfilePage({
             gap: 20,
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <button
+              type="button"
+              onClick={onBack}
+              style={{
+                width: "100%",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderTop: `3px solid ${gradient.start}`,
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025))",
+                color: "white",
+                borderRadius: 18,
+                padding: "14px 18px",
+                fontWeight: 950,
+                fontSize: 15,
+                cursor: "pointer",
+                textAlign: "center",
+                boxShadow: "0 12px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.08)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                letterSpacing: 0.2,
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 26,
+                  height: 26,
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  fontSize: 15,
+                  lineHeight: 1,
+                }}
+              >
+                ←
+              </span>
+
+              <span>Back</span>
+            </button>
+
             <div
               style={{
                 borderRadius: 24,
