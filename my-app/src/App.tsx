@@ -1250,7 +1250,7 @@ const handleSaveHomeStore = () => {
                     <span aria-hidden style={{ fontSize: 12, opacity: 0.9 }}>
                       🔒
                     </span>
-                    League Preview
+                    League
                   </button>
                 </div>
               </div>
