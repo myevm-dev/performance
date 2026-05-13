@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
+import StaffBadges, { type StaffBadge } from "../components/StaffBadges"
 
 type ServerProfile = {
   id: string
@@ -333,6 +334,15 @@ export default function ServerProfilePage({
 
   if (!server) return null
 
+
+ const badges: StaffBadge[] = [
+    { id: "first-review", label: "First Review", image: "/badges/firstreviewbadge.png", unlocked: false },
+    { id: "five-reviews", label: "5 Reviews", image: "/badges/firstreviewbadge.png", unlocked: false },
+    { id: "top-store", label: "Top Store", image: "/badges/firstreviewbadge.png", unlocked: false },
+    { id: "top-district", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
+    { id: "top-region", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
+    { id: "top-company", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
+  ]
 
   const gradient = getGlassGradient(server.avatarSeed || server.id)
 
@@ -885,6 +895,42 @@ export default function ServerProfilePage({
                 overflow: "hidden",
               }}
             >
+              <div
+                style={{
+                  padding: "16px 18px",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900 }}>
+                    Accomplishments (coming soon)
+                  </div>
+
+                </div>
+              </div>
+
+              <div style={{ padding: 18 }}>
+                <StaffBadges badges={badges} visibleCount={5} showDemoBadge={false} />
+              </div>
+            </div>
+
+            <div
+              style={{
+                borderRadius: 24,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
+                overflow: "hidden",
+              }}
+            >
+
+
               
 
               <div style={{ padding: 18 }}>
