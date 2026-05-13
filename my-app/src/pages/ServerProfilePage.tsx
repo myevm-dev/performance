@@ -356,11 +356,8 @@ export default function ServerProfilePage({
   const badaPercent = server.badaPercent ?? 0
   const reviews = server.reviews ?? 0
   const rewards = server.rewards ?? 0
-  const promoDollars = server.promoDollars ?? 0
-  const sales = server.sales ?? 0
+
   const score = server.score ?? 0
-  const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
-  const promoPenaltyColor = getPromoPenaltyColor(promoRate)
 
   const badaBars = useMemo(() => buildBadaBars(server.badaWeeks), [server.badaWeeks])
 
@@ -1052,79 +1049,138 @@ export default function ServerProfilePage({
               style={{
                 borderRadius: 24,
                 border: "1px solid rgba(255,255,255,0.10)",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                background:
+                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
                 boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
                 overflow: "hidden",
               }}
             >
-              <div
-                style={{
-                  padding: "16px 18px",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>Recent Activity</div>
-                  
-                </div>
-
-                <div
-                  style={{
-                    display: "inline-flex",
-                    padding: 4,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(0,0,0,0.18)",
-                    gap: 4,
-                  }}
-                >
-                  {[
-                    { key: "all" as const, label: "All" },
-                    { key: "review" as const, label: "Reviews" },
-                    { key: "rewards" as const, label: "Rewards" },
-                  ].map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setActivityFilter(item.key)}
-                      style={{
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "6px 10px",
-                        borderRadius: 999,
-                        fontWeight: 900,
-                        fontSize: 12,
-                        letterSpacing: 0.2,
-                        color: "inherit",
-                        background:
-                          activityFilter === item.key ? "rgba(255,255,255,0.10)" : "transparent",
-                      }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              
 
               <div style={{ padding: 18 }}>
                 <div
                   style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
                     gap: 14,
                     marginBottom: 18,
                   }}
                 >
-                  <StatCard label="Reviews" value={String(reviews)} accent="#67e8f9" />
-                  <StatCard label="Rewards" value={String(rewards)} accent="#c084fc" />
-                  <StatCard label="Promo/Void $" value={formatMoney(promoDollars)} accent={promoPenaltyColor} />
-                  <StatCard label="Sales" value={formatMoney(sales)} accent="white" />
-                  <StatCard label="Promo Rate" value={formatPercent(promoRate * 100, 2)} accent={promoPenaltyColor} />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivityFilter((prev) => (prev === "review" ? "all" : "review"))
+                    }
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      borderRadius: 18,
+                      background:
+                        activityFilter === "review"
+                          ? "linear-gradient(180deg, rgba(103,232,249,0.16), rgba(255,255,255,0.03))"
+                          : "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                      boxShadow:
+                        activityFilter === "review"
+                          ? "0 14px 34px rgba(103,232,249,0.12)"
+                          : "0 14px 34px rgba(0,0,0,0.28)",
+                      padding: 16,
+                      color: "inherit",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        opacity: 0.72,
+                        fontWeight: 800,
+                        letterSpacing: 0.3,
+                      }}
+                    >
+                      Reviews
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 28,
+                        fontWeight: 950,
+                        color: "#67e8f9",
+                        lineHeight: 1.05,
+                      }}
+                    >
+                      {reviews}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 11,
+                        opacity: 0.58,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {activityFilter === "review" ? "Showing reviews" : "Click to filter"}
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActivityFilter((prev) =>
+                        prev === "rewards" ? "all" : "rewards"
+                      )
+                    }
+                    style={{
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      borderRadius: 18,
+                      background:
+                        activityFilter === "rewards"
+                          ? "linear-gradient(180deg, rgba(192,132,252,0.16), rgba(255,255,255,0.03))"
+                          : "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                      boxShadow:
+                        activityFilter === "rewards"
+                          ? "0 14px 34px rgba(192,132,252,0.12)"
+                          : "0 14px 34px rgba(0,0,0,0.28)",
+                      padding: 16,
+                      color: "inherit",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 12,
+                        opacity: 0.72,
+                        fontWeight: 800,
+                        letterSpacing: 0.3,
+                      }}
+                    >
+                      Rewards
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 28,
+                        fontWeight: 950,
+                        color: "#c084fc",
+                        lineHeight: 1.05,
+                      }}
+                    >
+                      {rewards}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: 8,
+                        fontSize: 11,
+                        opacity: 0.58,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {activityFilter === "rewards" ? "Showing rewards" : "Click to filter"}
+                    </div>
+                  </button>
                 </div>
 
                 <div
@@ -1176,9 +1232,7 @@ export default function ServerProfilePage({
                         {row.type}
                       </div>
 
-                      <div style={{ fontSize: 13, opacity: 0.82 }}>
-                        {row.label}
-                      </div>
+                      <div style={{ fontSize: 13, opacity: 0.82 }}>{row.label}</div>
 
                       <div style={{ textAlign: "right" }}>
                         <span
@@ -1208,7 +1262,8 @@ export default function ServerProfilePage({
                     opacity: 0.62,
                   }}
                 >
-                  Next step: swap the placeholder activity array with your real Firestore click events for this server.
+                  Next step: swap the placeholder activity array with your real Firestore
+                  click events for this server.
                 </div>
               </div>
             </div>
