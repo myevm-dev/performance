@@ -650,3 +650,230 @@ body {
 .clickableName:hover::after {
   width: 100%;
 }
+.printLeaderboardHeader {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 0.25in;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .printLeaderboardHeader {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 0 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 2px solid black;
+    color: black !important;
+    background: white !important;
+  }
+
+  .printTitle {
+    font-size: 18px;
+    font-weight: 900;
+    color: black !important;
+    line-height: 1.1;
+  }
+
+  .printSub {
+    margin-top: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: black !important;
+    line-height: 1.1;
+  }
+
+  .printQrBox {
+    width: 66px;
+    height: 66px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #999;
+    background: white !important;
+    flex-shrink: 0;
+  }
+
+  .printQrBox svg {
+    width: 58px !important;
+    height: 58px !important;
+  }
+
+  .nav,
+  .hero,
+  .footerNote,
+  .iconBtn,
+  .modalOverlay {
+    display: none !important;
+  }
+
+  .appBg {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+  }
+
+  .container {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .card {
+    border: none !important;
+    background: white !important;
+    box-shadow: none !important;
+    color: black !important;
+  }
+
+  .card::before,
+  .card::after,
+  .navGlow {
+    display: none !important;
+  }
+
+  .cardHeader {
+    border-bottom: none !important;
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .cardHeader::before {
+    content: none !important;
+  }
+
+  .cardHeader [role="tablist"],
+  .cardHeader button {
+    display: none !important;
+  }
+
+  .tableWrap {
+    overflow: visible !important;
+    border: none !important;
+    background: white !important;
+  }
+
+  .table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    color: black !important;
+    background: white !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+    table-layout: auto !important;
+  }
+
+  .table th {
+    color: black !important;
+    background: #f2f2f2 !important;
+    border: 1px solid #777 !important;
+    padding: 8px 10px !important;
+    text-align: left !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  .table td {
+    color: black !important;
+    background: white !important;
+    border: 1px solid #777 !important;
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    vertical-align: middle !important;
+  }
+
+  .table tr,
+  .rowTop,
+  .rowSecond,
+  .rowThird {
+    height: 34px !important;
+    min-height: 34px !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .rankPill {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-weight: 900 !important;
+  }
+
+  .nameCell {
+    display: block !important;
+    color: black !important;
+  }
+
+  .clickableName {
+    color: black !important;
+    text-decoration: none !important;
+    font-size: 8px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .meta {
+    display: none !important;
+  }
+
+  .score {
+    color: black !important;
+    text-decoration: none !important;
+    font-size: 8px !important;
+  }
+
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 45px !important;
+  }
+
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 140px !important;
+  }
+
+  .table th:nth-child(3),
+  .table td:nth-child(3),
+  .table th:nth-child(4),
+  .table td:nth-child(4),
+  .table th:nth-child(5),
+  .table td:nth-child(5),
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    width: 70px !important;
+  }
+
+  .table th:nth-child(7),
+  .table td:nth-child(7) {
+    width: 95px !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: economy !important;
+    print-color-adjust: economy !important;
+  }
+}

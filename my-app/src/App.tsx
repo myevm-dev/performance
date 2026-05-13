@@ -9,6 +9,7 @@ import { db } from "./lib/firebase"
 import { stores as localStores } from "./data/stores"
 import ServerProfilePage from "./pages/ServerProfilePage"
 import { Routes, Route, useNavigate, useParams } from "react-router-dom"
+import { QRCodeSVG } from "qrcode.react"
 
 const PROMO_WEIGHT = 0.15
 
@@ -963,6 +964,10 @@ const activeStoreName =
   localStores.find((s) => s.storeNumber === activeStore)?.name ??
   `Store ${activeStore}`
 
+const handlePrintLeaderboard = () => {
+  window.print()
+}
+
 const handleSaveHomeStore = () => {
   if (!selectedStore) return
   localStorage.setItem("homeStore", selectedStore)
@@ -1255,6 +1260,14 @@ const handleSaveHomeStore = () => {
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 className="iconBtn"
+                onClick={handlePrintLeaderboard}
+                aria-label="Print leaderboard"
+                title="Print leaderboard"
+              >
+                ⎙
+              </button>
+              <button
+                className="iconBtn"
                 onClick={() => {
                   setSelectedStore(activeStore)
                   setStoreSearch("")
@@ -1284,6 +1297,26 @@ const handleSaveHomeStore = () => {
           ) : (
          
             <>
+              <div className="printLeaderboardHeader">
+                <div>
+                  <div className="printTitle">
+                    Team {activeStore} · {activeStoreName}
+                  </div>
+                  <div className="printSub">
+                    Scan to visit portal.daytadna.com
+                  </div>
+                </div>
+
+                <div className="printQrBox">
+                  <QRCodeSVG
+                    value="https://portal.daytadna.com"
+                    size={86}
+                    level="M"
+                    includeMargin
+                  />
+                </div>
+              </div>
+
               <div className="tableWrap" aria-label="Leaderboard table scroll area">
                 <table className="table">
                   <thead>
