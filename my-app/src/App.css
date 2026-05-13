@@ -930,3 +930,9 @@ body {
     print-color-adjust: economy !important;
   }
 }
+
+@media (max-width: 640px) {
+  .printBtn {
+    display: none !important;
+  }
+}

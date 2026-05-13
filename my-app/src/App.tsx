@@ -1167,7 +1167,7 @@ const handleSaveHomeStore = () => {
       <main className="container">
         <div className="hero">
         <h1 className="title" style={{ fontSize: 36 }}>
-          Server Leaderboard V2 Coming Soon
+          Leaderboard V2 Coming Soon
         </h1>
           <div
             style={{
@@ -1259,7 +1259,7 @@ const handleSaveHomeStore = () => {
 
             <div style={{ display: "flex", gap: 8 }}>
               <button
-                className="iconBtn"
+                className="iconBtn printBtn"
                 onClick={handlePrintLeaderboard}
                 aria-label="Print leaderboard"
                 title="Print leaderboard"
