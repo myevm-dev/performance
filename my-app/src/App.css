@@ -844,7 +844,7 @@ body {
   .score {
     color: black !important;
     text-decoration: none !important;
-    font-size: 8px !important;
+    font-size: 12px !important;
   }
 
   .table th:nth-child(1),
