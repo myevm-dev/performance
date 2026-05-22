@@ -657,157 +657,197 @@ body {
 @media print {
   @page {
     size: landscape;
-    margin: 0.25in;
+    margin: 0.18in;
   }
 
-  body {
+  html,
+  body,
+  #root {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
     background: white !important;
     color: black !important;
   }
 
+  body {
+    display: block !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .printLeaderboardHeader,
+  .printLeaderboardHeader *,
+  .tableWrap,
+  .tableWrap * {
+    visibility: visible !important;
+  }
+
+  .nav,
+  .navGlow,
+  .hero,
+  .footerNote,
+  .iconBtn,
+  .modalOverlay,
+  .cardHeader {
+    display: none !important;
+  }
+
+  .appBg,
+  .container,
+  .card,
+  .tableWrap {
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    color: black !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .card {
+    display: block !important;
+  }
+
   .printLeaderboardHeader {
     display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    gap: 18px;
-    padding: 0 0 8px 0;
-    margin-bottom: 8px;
-    border-bottom: 2px solid black;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 0 0 6px 0 !important;
+    margin: 0 0 6px 0 !important;
+    border-bottom: 2px solid black !important;
     color: black !important;
     background: white !important;
   }
 
   .printTitle {
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 16px !important;
+    font-weight: 900 !important;
     color: black !important;
-    line-height: 1.1;
+    line-height: 1.1 !important;
   }
 
   .printSub {
-    margin-top: 3px;
-    font-size: 10px;
-    font-weight: 700;
+    margin-top: 3px !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
     color: black !important;
-    line-height: 1.1;
+    line-height: 1.1 !important;
   }
 
   .printQrBox {
-    width: 66px;
-    height: 66px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid #999;
+    width: 58px !important;
+    height: 58px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid #999 !important;
     background: white !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
   }
 
   .printQrBox svg {
-    width: 58px !important;
-    height: 58px !important;
-  }
-
-  .nav,
-  .hero,
-  .footerNote,
-  .iconBtn,
-  .modalOverlay {
-    display: none !important;
-  }
-
-  .appBg {
-    background: white !important;
-    color: black !important;
-    padding: 0 !important;
-    min-height: 0 !important;
-  }
-
-  .container {
-    max-width: none !important;
-    width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .card {
-    border: none !important;
-    background: white !important;
-    box-shadow: none !important;
-    color: black !important;
-  }
-
-  .card::before,
-  .card::after,
-  .navGlow {
-    display: none !important;
-  }
-
-  .cardHeader {
-    border-bottom: none !important;
-    background: white !important;
-    color: black !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .cardHeader::before {
-    content: none !important;
-  }
-
-  .cardHeader [role="tablist"],
-  .cardHeader button {
-    display: none !important;
+    width: 50px !important;
+    height: 50px !important;
   }
 
   .tableWrap {
-    overflow: visible !important;
+    display: block !important;
     border: none !important;
-    background: white !important;
   }
 
   .table {
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     border-collapse: collapse !important;
+    table-layout: fixed !important;
     color: black !important;
     background: white !important;
-    font-size: 13px !important;
-    line-height: 1.25 !important;
-    table-layout: auto !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
   }
 
-  .table th {
-    color: black !important;
-    background: #f2f2f2 !important;
-    border: 1px solid #777 !important;
-    padding: 8px 10px !important;
-    text-align: left !important;
-    font-size: 12px !important;
-    line-height: 1.2 !important;
-    white-space: nowrap !important;
-  }
-
+  .table th,
   .table td {
     color: black !important;
     background: white !important;
     border: 1px solid #777 !important;
-    padding: 8px 10px !important;
-    font-size: 13px !important;
-    line-height: 1.2 !important;
+    padding: 4px 4px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
     vertical-align: middle !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+
+  .table th {
+    background: #f2f2f2 !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
   }
 
   .table tr,
   .rowTop,
   .rowSecond,
   .rowThird {
-    height: 34px !important;
-    min-height: 34px !important;
+    height: auto !important;
+    min-height: 0 !important;
     background: white !important;
     color: black !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .table th:nth-child(1),
+  .table td:nth-child(1) {
+    width: 7% !important;
+  }
+
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    width: 25% !important;
+  }
+
+  .table th:nth-child(3),
+  .table td:nth-child(3) {
+    width: 11% !important;
+  }
+
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    width: 12% !important;
+  }
+
+  .table th:nth-child(5),
+  .table td:nth-child(5) {
+    width: 12% !important;
+  }
+
+  .table th:nth-child(6),
+  .table td:nth-child(6) {
+    width: 12% !important;
+  }
+
+  .table th:nth-child(7),
+  .table td:nth-child(7) {
+    width: 21% !important;
   }
 
   .rankPill {
@@ -824,17 +864,24 @@ body {
 
   .nameCell {
     display: block !important;
+    min-width: 0 !important;
     color: black !important;
   }
 
   .clickableName {
+    display: block !important;
+    max-width: 100% !important;
     color: black !important;
     text-decoration: none !important;
-    font-size: 8px !important;
-    line-height: 1.05 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  .clickableName::after {
+    display: none !important;
   }
 
   .meta {
@@ -844,86 +891,8 @@ body {
   .score {
     color: black !important;
     text-decoration: none !important;
-    font-size: 12px !important;
+    font-size: 10px !important;
   }
-
-  .table th:nth-child(1),
-  .table td:nth-child(1) {
-    width: 45px !important;
-  }
-
-  .table th:nth-child(2),
-  .table td:nth-child(2) {
-    width: 140px !important;
-  }
-
-  .table th:nth-child(3),
-  .table td:nth-child(3),
-  .table th:nth-child(4),
-  .table td:nth-child(4),
-  .table th:nth-child(5),
-  .table td:nth-child(5),
-  .table th:nth-child(6),
-  .table td:nth-child(6) {
-    width: 70px !important;
-  }
-
-  .table th:nth-child(7),
-  .table td:nth-child(7) {
-    width: 95px !important;
-  }
-
-  html,
-  body,
-  #root {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-
-  body {
-    display: block !important;
-  }
-
-  .appBg,
-  .container,
-  .card,
-  .tableWrap {
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
-  }
-
-  body * {
-    visibility: hidden !important;
-  }
-
-  .printLeaderboardHeader,
-  .printLeaderboardHeader *,
-  .tableWrap,
-  .tableWrap * {
-    visibility: visible !important;
-  }
-
-  .printLeaderboardHeader,
-  .tableWrap {
-    position: relative !important;
-    left: 0 !important;
-    top: 0 !important;
-  }
-
-  .card {
-    display: block !important;
-  }
-
-  .cardHeader {
-    display: none !important;
-  }
-
 
   * {
     -webkit-print-color-adjust: economy !important;
