@@ -1321,16 +1321,15 @@ const handleSaveHomeStore = () => {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th style={{ width: 70 }}>Rank</th>
-                      <th style={{ width: 120 }}>Server</th>
-                      <th className="scoreHeader" style={{ width: 120, textAlign: "right" }}>
+                      <th>Rank</th>
+                      <th>Server</th>
+                      <th className="scoreHeader" style={{ textAlign: "right" }}>
                         Score
-                      
                       </th>
-                      <th style={{ width: 120, textAlign: "right" }}>BADA %</th>
-                      <th style={{ width: 110, textAlign: "right" }}>Reviews</th>
-                      <th style={{ width: 110, textAlign: "right" }}>Rewards</th>
-                      <th style={{ width: 140, textAlign: "right" }}>Promos/Voids ($)</th>
+                      <th style={{ textAlign: "right" }}>BADA %</th>
+                      <th style={{ textAlign: "right" }}>Reviews</th>
+                      <th style={{ textAlign: "right" }}>Rewards</th>
+                      <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
                     </tr>
                   </thead>
 
