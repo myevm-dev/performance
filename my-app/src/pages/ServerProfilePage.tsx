@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
-import StaffBadges, { type StaffBadge } from "../components/StaffBadges"
+// import StaffBadges, { type StaffBadge } from "../components/StaffBadges"
 
 type ServerProfile = {
   id: string
@@ -335,14 +335,16 @@ export default function ServerProfilePage({
   if (!server) return null
 
 
- const badges: StaffBadge[] = [
-    { id: "first-review", label: "First Review", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "five-reviews", label: "5 Reviews", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-store", label: "Top Store", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-district", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-region", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
-    { id: "top-company", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
-  ]
+/*
+const badges: StaffBadge[] = [
+  { id: "first-review", label: "First Review", image: "/badges/firstreviewbadge.png", unlocked: false },
+  { id: "five-reviews", label: "5 Reviews", image: "/badges/firstreviewbadge.png", unlocked: false },
+  { id: "top-store", label: "Top Store", image: "/badges/firstreviewbadge.png", unlocked: false },
+  { id: "top-district", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
+  { id: "top-region", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
+  { id: "top-company", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
+]
+*/
 
   const gradient = getGlassGradient(server.avatarSeed || server.id)
 
@@ -885,6 +887,7 @@ export default function ServerProfilePage({
               </div>
             </div>
 
+            {/*
             <div
               style={{
                 borderRadius: 24,
@@ -910,7 +913,6 @@ export default function ServerProfilePage({
                   <div style={{ fontSize: 18, fontWeight: 900 }}>
                     Accomplishments (coming soon)
                   </div>
-
                 </div>
               </div>
 
@@ -918,6 +920,7 @@ export default function ServerProfilePage({
                 <StaffBadges badges={badges} visibleCount={5} showDemoBadge={false} />
               </div>
             </div>
+            */}
 
             <div
               style={{

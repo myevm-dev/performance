@@ -10,7 +10,7 @@ import { stores as localStores } from "./data/stores"
 import ServerProfilePage from "./pages/ServerProfilePage"
 import { Routes, Route, useNavigate, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
-import LeagueComingSoon from "./components/LeagueComingSoon"
+
 import HomeStoreModal from "./components/HomeStoreModal"
 import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
@@ -34,8 +34,6 @@ type StoreOption = {
   storeNumber: string
   label: string
 }
-
-type ViewMode = "store" | "league"
 
 
 function getPromoPenaltyColor(promoRate: number) {
@@ -226,7 +224,7 @@ function ServerProfileRoute() {
 function LeaderboardApp() {
   const navigate = useNavigate()
   const [infoOpen, setInfoOpen] = useState(false)
-  const [mode, setMode] = useState<ViewMode>("store")
+
   const [clicksOpen, setClicksOpen] = useState(false)
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
   const [selectedStaffName, setSelectedStaffName] = useState("")
@@ -487,65 +485,77 @@ const handleSaveHomeStore = () => {
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div
-                  role="tablist"
-                  aria-label="Leaderboard mode"
-                  style={{
-                    display: "inline-flex",
-                    padding: 4,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(0,0,0,0.18)",
-                    gap: 4,
-                  }}
-                >
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === "store"}
-                    onClick={() => setMode("store")}
-                    style={{
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "6px 10px",
+  role="tablist"
+  aria-label="Leaderboard links"
+  style={{
+    display: "inline-flex",
+    padding: 5,
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))",
+    gap: 6,
+    boxShadow: "0 0 22px rgba(0,255,255,0.10)",
+  }}
+>
+  <a
+    href={`https://www.daytadna.com/team/${activeStore}`}
+    target="_blank"
+    rel="noreferrer"
+    role="tab"
+    aria-selected={true}
+    title={`Open Team ${activeStore}`}
+    style={{
+      cursor: "pointer",
+      padding: "8px 14px",
+      borderRadius: 999,
+      fontWeight: 900,
+      fontSize: 13,
+      letterSpacing: 0.25,
+      color: "#ffffff",
+      background:
+        "linear-gradient(135deg, rgba(253,1,245,0.38), rgba(1,252,252,0.18))",
+      border: "1px solid rgba(255,255,255,0.20)",
+      boxShadow:
+        "0 0 16px rgba(253,1,245,0.22), inset 0 0 10px rgba(255,255,255,0.08)",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+    }}
+  >
+    View Team {activeStore}
+  </a>
 
-                      borderRadius: 999,
-                      fontWeight: 800,
-                      fontSize: 12,
-                      letterSpacing: 0.2,
-                      color: "inherit",
-                      background: mode === "store" ? "rgba(255,255,255,0.10)" : "transparent",
-                    }}
-                  >
-                    Team {activeStore}
-                  </button>
-
-                  <a
-                    href="https://www.daytadna.com/league"
-                    target="_blank"
-                    rel="noreferrer"
-                    role="tab"
-                    aria-selected={false}
-                    title="League Preview is Live"
-                    style={{
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "6px 10px",
-                      borderRadius: 999,
-                      fontWeight: 800,
-                      fontSize: 12,
-                      letterSpacing: 0.2,
-                      color: "inherit",
-                      background: "transparent",
-                      opacity: 0.95,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      textDecoration: "none",
-                    }}
-                  >
-                    League Preview is Live
-                  </a>
-                </div>
+  <a
+    href="https://www.daytadna.com/league"
+    target="_blank"
+    rel="noreferrer"
+    role="tab"
+    aria-selected={false}
+    title="League Preview is Live"
+    style={{
+      cursor: "pointer",
+      padding: "8px 14px",
+      borderRadius: 999,
+      fontWeight: 900,
+      fontSize: 13,
+      letterSpacing: 0.25,
+      color: "#ffffff",
+      background:
+        "linear-gradient(135deg, rgba(1,252,252,0.26), rgba(253,1,245,0.18))",
+      border: "1px solid rgba(255,255,255,0.34)",
+      boxShadow:
+        "0 0 18px rgba(1,252,252,0.22), inset 0 0 10px rgba(255,255,255,0.08)",
+      textDecoration: "none",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      whiteSpace: "nowrap",
+    }}
+  >
+    League Preview is Live
+  </a>
+</div>
               </div>
 
             </div>
@@ -583,128 +593,121 @@ const handleSaveHomeStore = () => {
             </div>
           </div>
 
-          {mode === "league" ? (
-            <div style={{ padding: 16 }}>
-              <LeagueComingSoon />
-            </div>
-          ) : (
-         
-            <>
-              <div className="printLeaderboardHeader">
-                <div>
-                  <div className="printTitle">
-                    Team {activeStore} · {activeStoreName}
-                  </div>
-                  <div className="printSub">
-                    Scan to visit portal.daytadna.com
+          <>
+  <div className="printLeaderboardHeader">
+    <div>
+      <div className="printTitle">
+        Team {activeStore} · {activeStoreName}
+      </div>
+      <div className="printSub">
+        Scan to visit portal.daytadna.com
+      </div>
+    </div>
+
+    <div className="printQrBox">
+      <QRCodeSVG
+        value="https://portal.daytadna.com"
+        size={86}
+        level="M"
+        includeMargin
+      />
+    </div>
+  </div>
+
+  <div className="tableWrap" aria-label="Leaderboard table scroll area">
+    <table className="table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Server</th>
+          <th className="scoreHeader" style={{ textAlign: "right" }}>
+            Score
+          </th>
+          <th style={{ textAlign: "right" }}>BADA %</th>
+          <th style={{ textAlign: "right" }}>Reviews</th>
+          <th style={{ textAlign: "right" }}>Rewards</th>
+          <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {leaderboard.map((s, idx) => {
+          const top = idx === 0
+          const second = idx === 1
+          const third = idx === 2
+          const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
+
+          return (
+            <tr
+              key={s.id}
+              className={rowClass}
+              onClick={() => {
+                setSelectedStaffId(s.id)
+                setSelectedStaffName(s.name)
+
+                setSelectedScoreServer({
+                  name: s.name,
+                  badaPercent: s.badaPercent,
+                  reviews: s.reviews,
+                  rewards: s.rewards,
+                  promoDollars: s.promoDollars,
+                  sales: s.sales,
+                  score: s.score,
+                })
+
+                navigate(`/profile/${s.code}`)
+              }}
+              style={{ cursor: "pointer" }}
+            >
+              <td>
+                <div className="rankPill">{idx + 1}</div>
+              </td>
+
+              <td>
+                <div className="nameCell">
+                  <div>
+                    <div className="clickableName">
+                      {s.name}
+                    </div>
+                    <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
                   </div>
                 </div>
+              </td>
 
-                <div className="printQrBox">
-                  <QRCodeSVG
-                    value="https://portal.daytadna.com"
-                    size={86}
-                    level="M"
-                    includeMargin
-                  />
-                </div>
-              </div>
+              <td style={{ textAlign: "right" }}>
+                <span className="score" style={{ textDecoration: "underline dotted" }}>
+                  {s.score}
+                </span>
+              </td>
 
-              <div className="tableWrap" aria-label="Leaderboard table scroll area">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Server</th>
-                      <th className="scoreHeader" style={{ textAlign: "right" }}>
-                        Score
-                      </th>
-                      <th style={{ textAlign: "right" }}>BADA %</th>
-                      <th style={{ textAlign: "right" }}>Reviews</th>
-                      <th style={{ textAlign: "right" }}>Rewards</th>
-                      <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
-                    </tr>
-                  </thead>
+              <td style={{ textAlign: "right" }}>
+                <span
+                  style={{
+                    color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
+                    fontWeight: 700,
+                  }}
+                >
+                  {Number(s.badaPercent.toFixed(1))}%
+                </span>
+              </td>
 
-                  <tbody>
-                    {leaderboard.map((s, idx) => {
-                      const top = idx === 0
-                      const second = idx === 1
-                      const third = idx === 2
-                      const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
+              <td style={{ textAlign: "right" }}>{s.reviews}</td>
+              <td style={{ textAlign: "right" }}>{s.rewards}</td>
+              <td style={{ textAlign: "right", color: getPromoPenaltyColor(s.promoRate), fontWeight: 800 }}>
+                ${s.promoDollars.toFixed(2)}
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  </div>
 
-                      return (
-                        <tr
-                          key={s.id}
-                          className={rowClass}
-                          onClick={() => {
-                            setSelectedStaffId(s.id)
-                            setSelectedStaffName(s.name)
-
-                            setSelectedScoreServer({
-                              name: s.name,
-                              badaPercent: s.badaPercent,
-                              reviews: s.reviews,
-                              rewards: s.rewards,
-                              promoDollars: s.promoDollars,
-                              sales: s.sales,
-                              score: s.score,
-                            })
-
-                          navigate(`/profile/${s.code}`)
-
-                          }}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <td>
-                            <div className="rankPill">{idx + 1}</div>
-                          </td>
-
-                          <td>
-                            <div className="nameCell">
-                              <div>
-                                <div className="clickableName">
-                                  {s.name}
-                                </div>
-                                <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td style={{ textAlign: "right" }}>
-                            <span className="score" style={{ textDecoration: "underline dotted" }}>
-                              {s.score}
-                            </span>
-                          </td>
-
-                          <td style={{ textAlign: "right" }}>
-                            <span
-                              style={{
-                                color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
-                                fontWeight: 700,
-                              }}
-                            >
-                              {Number(s.badaPercent.toFixed(1))}%
-                            </span>
-                          </td>
-
-                          <td style={{ textAlign: "right" }}>{s.reviews}</td>
-                          <td style={{ textAlign: "right" }}>{s.rewards}</td>
-                          <td style={{ textAlign: "right", color: getPromoPenaltyColor(s.promoRate), fontWeight: 800 }}>
-                            ${s.promoDollars.toFixed(2)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="footerNote">
-                Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
-              </div>
-            </>
-          )}
+  <div className="footerNote">
+    Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
+  </div>
+</>
+   
         </div>
       </main>
       <ScoringInfoModal
