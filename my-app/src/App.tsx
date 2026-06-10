@@ -11,6 +11,7 @@ import ServerProfilePage from "./pages/ServerProfilePage"
 import { Routes, Route, useNavigate, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
 
+import Navbar from "./components/Navbar"
 import HomeStoreModal from "./components/HomeStoreModal"
 import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
@@ -49,30 +50,13 @@ function getPromoPenaltyColor(promoRate: number) {
   return "#b91c1c"
 }
 
-function ThemeToggle({
+function ServerProfileRoute({
   theme,
   setTheme,
 }: {
   theme: ThemeMode
   setTheme: (theme: ThemeMode) => void
 }) {
-  const nextTheme = theme === "light" ? "dark" : "light"
-
-  return (
-    <button
-      type="button"
-      className="themeToggle"
-      onClick={() => setTheme(nextTheme)}
-      title={`Switch to ${nextTheme} mode`}
-      aria-label={`Switch to ${nextTheme} mode`}
-    >
-      <span className="themeToggleDot">{theme === "light" ? "☀" : "☾"}</span>
-      <span>{theme === "light" ? "Light" : "Dark"}</span>
-    </button>
-  )
-}
-
-function ServerProfileRoute() {
   const { staffCode } = useParams()
   const navigate = useNavigate()
 
@@ -126,7 +110,7 @@ function ServerProfileRoute() {
           query(
             collection(db, "stores", storeNumber, "badaPublishedWeeks"),
             orderBy("weekStart", "desc"),
-            limit(3)
+            limit(12)
           )
         )
 
@@ -230,27 +214,39 @@ function ServerProfileRoute() {
   }, [staffCode])
 
   if (loading) {
-    return (
-      <div className="appBg loadingPage">
-        Loading profile...
-      </div>
-    )
+    return <div className="appBg loadingPage">Loading profile...</div>
   }
 
   if (!server) {
-    return (
-      <div className="appBg loadingPage">
-        Profile not found
-      </div>
-    )
+    return <div className="appBg loadingPage">Profile not found</div>
   }
 
   return (
-    <ServerProfilePage
-      server={server}
-      onBack={() => navigate("/")}
+  <div className="appBg">
+    <Navbar
+      activeStore={server.storeNumber || ""}
+      theme={theme}
+      setTheme={setTheme}
     />
-  )
+
+    <main className="container" style={{ paddingTop: 12 }}>
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        className="btnPrimary"
+        style={{
+          borderRadius: 999,
+          whiteSpace: "nowrap",
+          marginBottom: 10,
+        }}
+      >
+        ← Back
+      </button>
+    </main>
+
+    <ServerProfilePage server={server} onBack={() => navigate("/")} />
+  </div>
+)
 }
 
 function LeaderboardApp({
@@ -261,15 +257,21 @@ function LeaderboardApp({
   setTheme: (theme: ThemeMode) => void
 }) {
   const navigate = useNavigate()
+
   const [infoOpen, setInfoOpen] = useState(false)
   const [clicksOpen, setClicksOpen] = useState(false)
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
   const [selectedStaffName, setSelectedStaffName] = useState("")
   const [storesList, setStoresList] = useState<StoreOption[]>([])
   const [homeStore, setHomeStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
+  const [viewedStore, setViewedStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
   const [storePickerOpen, setStorePickerOpen] = useState(() => !localStorage.getItem("homeStore"))
   const [storeSearch, setStoreSearch] = useState("")
   const [selectedStore, setSelectedStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
+
+  const [leaderboardSearch, setLeaderboardSearch] = useState("")
+  const [leaderboardSearchFocused, setLeaderboardSearchFocused] = useState(false)
+
   const [scoreOpen, setScoreOpen] = useState(false)
   const [selectedScoreServer, setSelectedScoreServer] = useState<{
     name: string
@@ -285,11 +287,28 @@ function LeaderboardApp({
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
   const [servers, setServers] = useState<ServerStats[]>([])
 
-  const activeStore = homeStore || "6909"
-
+  const activeStore = viewedStore || homeStore || "6909"
   const activeStoreName =
     localStores.find((s) => s.storeNumber === activeStore)?.name ??
+    storesList.find((s) => s.storeNumber === activeStore)?.label ??
     `Store ${activeStore}`
+
+  const isHomeStore = homeStore === activeStore
+
+  const filteredLeaderboardStores = useMemo(() => {
+    const queryText = leaderboardSearch.toLowerCase().trim()
+
+    if (!queryText) return []
+
+    return storesList
+      .filter((store) => {
+        return (
+          store.storeNumber.toLowerCase().includes(queryText) ||
+          store.label.toLowerCase().includes(queryText)
+        )
+      })
+      .slice(0, 8)
+  }, [leaderboardSearch, storesList])
 
   const handlePrintLeaderboard = () => {
     window.print()
@@ -297,9 +316,23 @@ function LeaderboardApp({
 
   const handleSaveHomeStore = () => {
     if (!selectedStore) return
+
     localStorage.setItem("homeStore", selectedStore)
     setHomeStore(selectedStore)
+    setViewedStore(selectedStore)
+    setLeaderboardSearch("")
     setStorePickerOpen(false)
+  }
+
+  const handlePinCurrentStore = () => {
+    localStorage.setItem("homeStore", activeStore)
+    setHomeStore(activeStore)
+  }
+
+  const handleSelectLeaderboardStore = (store: StoreOption) => {
+    setViewedStore(store.storeNumber)
+    setLeaderboardSearch("")
+    setLeaderboardSearchFocused(false)
   }
 
   useEffect(() => {
@@ -478,28 +511,12 @@ function LeaderboardApp({
 
   return (
     <div className="appBg">
-      <div className="nav">
-        <div className="navInner">
-          <div className="brand">
-            <div className="brandMark" />
-            <div>
-              <div className="brandTitle">Dayta DNA</div>
-              <div className="brandSub">Store performance leaderboard</div>
-            </div>
-          </div>
-
-          <div className="navRight">
-            <div className="navBadge">Store {activeStore}</div>
-            <ThemeToggle theme={theme} setTheme={setTheme} />
-          </div>
-        </div>
-        <div className="navGlow" />
-      </div>
+      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
 
       <main className="container">
         <div className="hero">
-          <h1 className="title" style={{ fontSize: 28 }}>
-            Store Leaderboard
+          <h1 className="title" style={{ fontSize: 26 }}>
+            Team Leaderboard
           </h1>
 
           <div className="heroStoreName">
@@ -507,71 +524,97 @@ function LeaderboardApp({
           </div>
 
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last BADA refresh:{" "}
+            Trailing 21 days · Reviews & Rewards near real-time. <br/> BADA & Promos weekly · Last BADA refresh:{" "}
             {lastBadaRefresh || "Not published yet"}
           </p>
         </div>
 
         <div className="card">
-          <div className="cardHeader">
-            <div>
-              <div className="leaderboardLinkPills">
-                <a
-                  href={`https://www.daytadna.com/team/${activeStore}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  role="tab"
-                  aria-selected={true}
-                  title={`Open Team ${activeStore}`}
-                  className="leaderboardPill leaderboardPillPrimary"
-                >
-                  View Team {activeStore}
-                </a>
-
-                <a
-                  href="https://www.daytadna.com/league"
-                  target="_blank"
-                  rel="noreferrer"
-                  role="tab"
-                  aria-selected={false}
-                  title="League Preview is Live"
-                  className="leaderboardPill leaderboardPillSecondary"
-                >
-                  League Preview is Live
-                </a>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: 8 }}>
+          <div className="cardHeader leaderboardHeader">
+            <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
               <button
-                className="iconBtn printBtn"
+                className="leaderboardHeaderAction printBtn"
                 onClick={handlePrintLeaderboard}
                 aria-label="Print leaderboard"
                 title="Print leaderboard"
               >
-                ⎙
+                <span aria-hidden>⎙</span>
+                <span>Print</span>
               </button>
 
               <button
-                className="iconBtn"
-                onClick={() => {
-                  setSelectedStore(activeStore)
-                  setStoreSearch("")
-                  setStorePickerOpen(true)
-                }}
-                aria-label="Change store"
-                title="Change store"
+                className={`leaderboardHeaderAction ${isHomeStore ? "homePinnedBtn" : ""}`}
+                onClick={handlePinCurrentStore}
+                aria-label={
+                  isHomeStore
+                    ? "This leaderboard is your home store"
+                    : "Set this leaderboard as home store"
+                }
+                title={
+                  isHomeStore
+                    ? "This is your home store"
+                    : "Pin this store as your home"
+                }
               >
-                ⇄
+                <span aria-hidden>{isHomeStore ? "📌" : "📍"}</span>
+                <span>{isHomeStore ? "Pinned" : "Pin"}</span>
+              </button>
+            </div>
+
+            <div className="leaderboardStoreSearchWrap">
+              <input
+                value={leaderboardSearch}
+                onChange={(e) => setLeaderboardSearch(e.target.value)}
+                onFocus={() => setLeaderboardSearchFocused(true)}
+                placeholder={`Search stores`}
+                className="leaderboardStoreSearchInput"
+              />
+
+              {leaderboardSearchFocused && filteredLeaderboardStores.length > 0 ? (
+                <div className="leaderboardStoreSearchResults">
+                  {filteredLeaderboardStores.map((store, idx) => (
+                    <button
+                      key={store.id}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        handleSelectLeaderboardStore(store)
+                      }}
+                      className="leaderboardStoreSearchResult"
+                      style={{
+                        borderBottom:
+                          idx === filteredLeaderboardStores.length - 1
+                            ? "none"
+                            : "1px solid var(--stroke)",
+                      }}
+                    >
+                      <span>{store.label}</span>
+                      <small>#{store.storeNumber}</small>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="leaderboardHeaderActions leaderboardHeaderActionsRight">
+              <button
+                className="leaderboardHeaderAction"
+                onClick={() => setLeaderboardSearchFocused(true)}
+                aria-label="Search stores"
+                title="Search stores"
+              >
+                <span aria-hidden>⌕</span>
+                <span>Search</span>
               </button>
 
               <button
-                className="iconBtn"
+                className="leaderboardHeaderAction"
                 onClick={() => setInfoOpen(true)}
                 aria-label="Open scoring info"
                 title="Scoring info"
               >
-                ?
+                <span aria-hidden>?</span>
+                <span>Help</span>
               </button>
             </div>
           </div>
@@ -697,10 +740,6 @@ function LeaderboardApp({
                 </tbody>
               </table>
             </div>
-
-            <div className="footerNote">
-              Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
-            </div>
           </>
         </div>
       </main>
@@ -758,7 +797,10 @@ export default function App() {
         path="/"
         element={<LeaderboardApp theme={theme} setTheme={setTheme} />}
       />
-      <Route path="/profile/:staffCode" element={<ServerProfileRoute />} />
+      <Route
+        path="/profile/:staffCode"
+        element={<ServerProfileRoute theme={theme} setTheme={setTheme} />}
+      />
     </Routes>
   )
 }

@@ -324,7 +324,7 @@ function ScoreBreakdownModal({
 
 export default function ServerProfilePage({
   server,
-  onBack,
+  
 }: ServerProfilePageProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
   const [activityFilter, setActivityFilter] = useState<
@@ -405,54 +405,10 @@ export default function ServerProfilePage({
   }, [activityRows, activityFilter])
 
   return (
-    <div className="appBg">
-      <div className="nav">
-        <div className="navInner">
-          <div className="brand">
-            <div className="brandMark" />
+  <>
+    <main className="container" style={{ maxWidth: 1200 }}>
 
-            <div>
-              <div className="brandTitle">Dayta DNA</div>
-              <div className="brandSub">Server performance profile</div>
-            </div>
-          </div>
-
-          <div className="navRight">
-            <div className="navBadge">
-              {server.storeName || `Store ${server.storeNumber || ""}`}
-            </div>
-
-            <button
-              type="button"
-              onClick={onBack}
-              className="btnPrimary"
-              style={{
-                borderRadius: 999,
-                whiteSpace: "nowrap",
-              }}
-            >
-              ← Back
-            </button>
-          </div>
-        </div>
-
-        <div className="navGlow" />
-      </div>
-
-      <main className="container" style={{ maxWidth: 1200 }}>
-        <div className="hero">
-          <h1 className="title" style={{ fontSize: 34 }}>
-            {server.name}
-          </h1>
-
-          <div className="heroStoreName">
-            {server.storeName || `Store ${server.storeNumber || ""}`}
-          </div>
-
-          <p className="subtitle">
-            BADA performance · Review clicks · Rewards clicks · Promo/Void impact
-          </p>
-        </div>
+      
 
         <div
           className="serverProfileGrid"
@@ -1173,6 +1129,6 @@ export default function ServerProfilePage({
           }
         }
       `}</style>
-    </div>
-  )
+      </>
+)
 }
