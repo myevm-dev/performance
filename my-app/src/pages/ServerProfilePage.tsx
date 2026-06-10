@@ -322,10 +322,7 @@ function ScoreBreakdownModal({
   )
 }
 
-export default function ServerProfilePage({
-  server,
-  
-}: ServerProfilePageProps) {
+export default function ServerProfilePage({ server }: ServerProfilePageProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
   const [activityFilter, setActivityFilter] = useState<
     "all" | "review" | "rewards"
@@ -405,11 +402,8 @@ export default function ServerProfilePage({
   }, [activityRows, activityFilter])
 
   return (
-  <>
-    <main className="container" style={{ maxWidth: 1200 }}>
-
-      
-
+    <>
+      <main className="serverProfileContainer">
         <div
           className="serverProfileGrid"
           style={{
@@ -597,12 +591,7 @@ export default function ServerProfilePage({
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <section className="card" style={{ marginTop: 0 }}>
-              <div className="cardHeader">
-                <div>
-                  <div className="cardTitle">Performance Snapshot</div>
-                  <div className="cardSub">Current server-level score inputs</div>
-                </div>
-              </div>
+
 
               <div
                 className="profileStatsGrid"
@@ -1129,6 +1118,6 @@ export default function ServerProfilePage({
           }
         }
       `}</style>
-      </>
-)
+    </>
+  )
 }

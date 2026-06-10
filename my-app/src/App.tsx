@@ -222,31 +222,26 @@ function ServerProfileRoute({
   }
 
   return (
-  <div className="appBg">
-    <Navbar
-      activeStore={server.storeNumber || ""}
-      theme={theme}
-      setTheme={setTheme}
-    />
+    <div className="appBg">
+      <Navbar
+        activeStore={server.storeNumber || ""}
+        theme={theme}
+        setTheme={setTheme}
+      />
 
-    <main className="container" style={{ paddingTop: 12 }}>
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        className="btnPrimary"
-        style={{
-          borderRadius: 999,
-          whiteSpace: "nowrap",
-          marginBottom: 10,
-        }}
-      >
-        ← Back
-      </button>
-    </main>
+      <div className="profileBackWrap">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="btnPrimary profileBackBtn"
+        >
+          ← Back
+        </button>
+      </div>
 
-    <ServerProfilePage server={server} onBack={() => navigate("/")} />
-  </div>
-)
+      <ServerProfilePage server={server} onBack={() => navigate("/")} />
+    </div>
+  )
 }
 
 function LeaderboardApp({
