@@ -515,7 +515,7 @@ export default function ServerProfilePage({
   const chartMax = isMobileChart ? 148 : 210
   const chartTicks = isMobileChart
     ? [148, 144, 140, 136, 132, 128]
-    : [200, 180, 160, 140, 120, 100]
+    : [200, 180, 160, 140, 120, 100, 80]
 
   const svgWidth = 1000
 const svgHeight = isMobileChart ? 330 : 500
