@@ -16,7 +16,6 @@ import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
 import ChangelogModal from "./components/ChangelogModal"
 
-
 type ServerStats = {
   id: string
   code: string
@@ -35,16 +34,43 @@ type StoreOption = {
   label: string
 }
 
+type ThemeMode = "light" | "dark"
 
-function getPromoPenaltyColor(promoRate: number) {
-  if (promoRate <= 0.002) return "rgba(105, 213, 118, 0.92)" // <= 0.20%
-  if (promoRate <= 0.003) return "#fca5a5" // 0.21–0.30%
-  if (promoRate <= 0.005) return "#f87171" // 0.31–0.50%
-  if (promoRate <= 0.0075) return "#ef4444" // 0.51–0.75%
-  return "#b91c1c" // > 0.75%
+function getInitialTheme(): ThemeMode {
+  const saved = localStorage.getItem("app_theme")
+  return saved === "dark" || saved === "light" ? saved : "light"
 }
 
+function getPromoPenaltyColor(promoRate: number) {
+  if (promoRate <= 0.002) return "rgba(105, 213, 118, 0.92)"
+  if (promoRate <= 0.003) return "#fca5a5"
+  if (promoRate <= 0.005) return "#f87171"
+  if (promoRate <= 0.0075) return "#ef4444"
+  return "#b91c1c"
+}
 
+function ThemeToggle({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
+  const nextTheme = theme === "light" ? "dark" : "light"
+
+  return (
+    <button
+      type="button"
+      className="themeToggle"
+      onClick={() => setTheme(nextTheme)}
+      title={`Switch to ${nextTheme} mode`}
+      aria-label={`Switch to ${nextTheme} mode`}
+    >
+      <span className="themeToggleDot">{theme === "light" ? "☀" : "☾"}</span>
+      <span>{theme === "light" ? "Light" : "Dark"}</span>
+    </button>
+  )
+}
 
 function ServerProfileRoute() {
   const { staffCode } = useParams()
@@ -158,6 +184,7 @@ function ServerProfileRoute() {
           sales += Number(serverRow.sales ?? 0)
           promoDollars += Number(serverRow.promosVoidsSum ?? 0)
         })
+
         const badaPercent = badaCount > 0 ? badaSum / badaCount : 0
         const reviews = directCounts.reviews + legacyCounts.reviews
         const rewards = directCounts.rewards + legacyCounts.rewards
@@ -167,7 +194,6 @@ function ServerProfileRoute() {
           id: String(staffData.code ?? staffDoc.id),
           code: String(staffData.code ?? staffDoc.id),
           name: staffData.name ?? "Unnamed",
-          
           storeNumber,
           storeName,
           score: calculateScore({
@@ -204,11 +230,19 @@ function ServerProfileRoute() {
   }, [staffCode])
 
   if (loading) {
-    return <div className="appBg" style={{ color: "white", padding: 24 }}>Loading profile...</div>
+    return (
+      <div className="appBg loadingPage">
+        Loading profile...
+      </div>
+    )
   }
 
   if (!server) {
-    return <div className="appBg" style={{ color: "white", padding: 24 }}>Profile not found</div>
+    return (
+      <div className="appBg loadingPage">
+        Profile not found
+      </div>
+    )
   }
 
   return (
@@ -219,12 +253,15 @@ function ServerProfileRoute() {
   )
 }
 
-
-
-function LeaderboardApp() {
+function LeaderboardApp({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
   const navigate = useNavigate()
   const [infoOpen, setInfoOpen] = useState(false)
-
   const [clicksOpen, setClicksOpen] = useState(false)
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null)
   const [selectedStaffName, setSelectedStaffName] = useState("")
@@ -245,196 +282,188 @@ function LeaderboardApp() {
   } | null>(null)
 
   const [changelogOpen, setChangelogOpen] = useState(false)
-
-
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
-
-
   const [servers, setServers] = useState<ServerStats[]>([])
+
   const activeStore = homeStore || "6909"
 
-const activeStoreName =
-  localStores.find((s) => s.storeNumber === activeStore)?.name ??
-  `Store ${activeStore}`
+  const activeStoreName =
+    localStores.find((s) => s.storeNumber === activeStore)?.name ??
+    `Store ${activeStore}`
 
-const handlePrintLeaderboard = () => {
-  window.print()
-}
+  const handlePrintLeaderboard = () => {
+    window.print()
+  }
 
-const handleSaveHomeStore = () => {
-  if (!selectedStore) return
-  localStorage.setItem("homeStore", selectedStore)
-  setHomeStore(selectedStore)
-  setStorePickerOpen(false)
-}
+  const handleSaveHomeStore = () => {
+    if (!selectedStore) return
+    localStorage.setItem("homeStore", selectedStore)
+    setHomeStore(selectedStore)
+    setStorePickerOpen(false)
+  }
 
   useEffect(() => {
-  let alive = true
+    let alive = true
 
-  ;(async () => {
-  try {
-    const counts = await fetchStaffCountsLast21Days(activeStore)
+    ;(async () => {
+      try {
+        const counts = await fetchStaffCountsLast21Days(activeStore)
 
-    const staffSnap = await getDocs(
-      query(collection(db, "staffUsers"), where("storeNumber", "==", activeStore))
-    )
-
-    const liveStaff = staffSnap.docs.map((docSnap) => {
-      const data = docSnap.data() as {
-        code?: string
-        name?: string
-        legacyid?: string | null
-      }
-
-      return {
-        code: data.code ?? docSnap.id,
-        name: data.name ?? "Unnamed",
-        legacyid: data.legacyid ?? null,
-      }
-    })
-
-    const latestBadaSnap = await getDocs(
-      query(
-        collection(db, "stores", activeStore, "badaPublishedWeeks"),
-        orderBy("publishedAt", "desc"),
-        limit(1)
-      )
-    )
-
-    if (alive) {
-      const latestPublishedAt = latestBadaSnap.docs[0]?.data()?.publishedAt
-
-      if (latestPublishedAt?.toDate) {
-        setLastBadaRefresh(
-          latestPublishedAt.toDate().toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "numeric",
-            day: "numeric",
-          })
+        const staffSnap = await getDocs(
+          query(collection(db, "staffUsers"), where("storeNumber", "==", activeStore))
         )
-      } else {
-        setLastBadaRefresh("")
-      }
-    }
 
-  const badaSnap = await getDocs(
-    query(
-      collection(db, "stores", activeStore, "badaPublishedWeeks"),
-      orderBy("weekStart", "desc"),
-      limit(3)
-    )
-  )
-
-    const badaAgg = new Map<
-      string,
-      { badaSum: number; count: number; sales: number; promos: number }
-    >()
-
-    badaSnap.docs.forEach((doc) => {
-      const data = doc.data() as {
-        rows?: Array<{
-          code?: string
-          sales?: number
-          badaPercent?: number
-          promosVoidsSum?: number
-        }>
-      }
-
-      ;(data.rows ?? []).forEach((row) => {
-        if (!row.code) return
-
-        const key = String(row.code)
-
-        const existing = badaAgg.get(key) ?? {
-          badaSum: 0,
-          count: 0,
-          sales: 0,
-          promos: 0,
-        }
-
-        existing.badaSum += Number(row.badaPercent ?? 0)
-        existing.count += 1
-        existing.sales += Number(row.sales ?? 0)
-        existing.promos += Number(row.promosVoidsSum ?? 0)
-
-        badaAgg.set(key, existing)
-      })
-    })
-
-    const rows: ServerStats[] = liveStaff.map((staff) => {
-      const bada = badaAgg.get(staff.code)
-
-      const directCounts = counts[staff.code] ?? { reviews: 0, rewards: 0 }
-      const legacyCounts = staff.legacyid
-        ? counts[staff.legacyid] ?? { reviews: 0, rewards: 0 }
-        : { reviews: 0, rewards: 0 }
-
-      return {
-        id: staff.code,
-        code: staff.code,
-        legacyid: staff.legacyid,
-        name: staff.name,
-
-        badaPercent: bada && bada.count > 0 ? bada.badaSum / bada.count : 0,
-        sales: bada?.sales ?? 0,
-        promoDollars: bada?.promos ?? 0,
-
-        reviews: directCounts.reviews + legacyCounts.reviews,
-        rewards: directCounts.rewards + legacyCounts.rewards,
-      }
-    })
-
-    if (alive) setServers(rows)
-  } catch (err) {
-    console.error("Failed to load leaderboard data:", err)
-  }
-})()
-
-  return () => {
-    alive = false
-  }
-}, [activeStore])
-      
-
-
-  useEffect(() => {
-  let alive = true
-
-  ;(async () => {
-    try {
-      const snap = await getDocs(collection(db, "stores"))
-
-      const rows: StoreOption[] = snap.docs
-        .map((docSnap) => {
+        const liveStaff = staffSnap.docs.map((docSnap) => {
           const data = docSnap.data() as {
-            storeNumber?: string
+            code?: string
+            name?: string
+            legacyid?: string | null
           }
-
-          const storeNumber = String(data.storeNumber ?? docSnap.id)
-
-          const localMatch = localStores.find(
-            (s) => s.storeNumber === storeNumber
-          )
 
           return {
-            id: docSnap.id,
-            storeNumber,
-            label: localMatch?.name ?? `Store ${storeNumber}`,
+            code: data.code ?? docSnap.id,
+            name: data.name ?? "Unnamed",
+            legacyid: data.legacyid ?? null,
           }
         })
-        .sort((a, b) => a.storeNumber.localeCompare(b.storeNumber))
 
-      if (alive) setStoresList(rows)
-    } catch (err) {
-      console.error("Failed to load stores:", err)
+        const latestBadaSnap = await getDocs(
+          query(
+            collection(db, "stores", activeStore, "badaPublishedWeeks"),
+            orderBy("publishedAt", "desc"),
+            limit(1)
+          )
+        )
+
+        if (alive) {
+          const latestPublishedAt = latestBadaSnap.docs[0]?.data()?.publishedAt
+
+          if (latestPublishedAt?.toDate) {
+            setLastBadaRefresh(
+              latestPublishedAt.toDate().toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "numeric",
+                day: "numeric",
+              })
+            )
+          } else {
+            setLastBadaRefresh("")
+          }
+        }
+
+        const badaSnap = await getDocs(
+          query(
+            collection(db, "stores", activeStore, "badaPublishedWeeks"),
+            orderBy("weekStart", "desc"),
+            limit(3)
+          )
+        )
+
+        const badaAgg = new Map<
+          string,
+          { badaSum: number; count: number; sales: number; promos: number }
+        >()
+
+        badaSnap.docs.forEach((docSnap) => {
+          const data = docSnap.data() as {
+            rows?: Array<{
+              code?: string
+              sales?: number
+              badaPercent?: number
+              promosVoidsSum?: number
+            }>
+          }
+
+          ;(data.rows ?? []).forEach((row) => {
+            if (!row.code) return
+
+            const key = String(row.code)
+
+            const existing = badaAgg.get(key) ?? {
+              badaSum: 0,
+              count: 0,
+              sales: 0,
+              promos: 0,
+            }
+
+            existing.badaSum += Number(row.badaPercent ?? 0)
+            existing.count += 1
+            existing.sales += Number(row.sales ?? 0)
+            existing.promos += Number(row.promosVoidsSum ?? 0)
+
+            badaAgg.set(key, existing)
+          })
+        })
+
+        const rows: ServerStats[] = liveStaff.map((staff) => {
+          const bada = badaAgg.get(staff.code)
+
+          const directCounts = counts[staff.code] ?? { reviews: 0, rewards: 0 }
+          const legacyCounts = staff.legacyid
+            ? counts[staff.legacyid] ?? { reviews: 0, rewards: 0 }
+            : { reviews: 0, rewards: 0 }
+
+          return {
+            id: staff.code,
+            code: staff.code,
+            legacyid: staff.legacyid,
+            name: staff.name,
+            badaPercent: bada && bada.count > 0 ? bada.badaSum / bada.count : 0,
+            sales: bada?.sales ?? 0,
+            promoDollars: bada?.promos ?? 0,
+            reviews: directCounts.reviews + legacyCounts.reviews,
+            rewards: directCounts.rewards + legacyCounts.rewards,
+          }
+        })
+
+        if (alive) setServers(rows)
+      } catch (err) {
+        console.error("Failed to load leaderboard data:", err)
+      }
+    })()
+
+    return () => {
+      alive = false
     }
-  })()
+  }, [activeStore])
 
-  return () => {
-    alive = false
-  }
-}, [])
+  useEffect(() => {
+    let alive = true
 
+    ;(async () => {
+      try {
+        const snap = await getDocs(collection(db, "stores"))
+
+        const rows: StoreOption[] = snap.docs
+          .map((docSnap) => {
+            const data = docSnap.data() as {
+              storeNumber?: string
+            }
+
+            const storeNumber = String(data.storeNumber ?? docSnap.id)
+
+            const localMatch = localStores.find(
+              (s) => s.storeNumber === storeNumber
+            )
+
+            return {
+              id: docSnap.id,
+              storeNumber,
+              label: localMatch?.name ?? `Store ${storeNumber}`,
+            }
+          })
+          .sort((a, b) => a.storeNumber.localeCompare(b.storeNumber))
+
+        if (alive) setStoresList(rows)
+      } catch (err) {
+        console.error("Failed to load stores:", err)
+      }
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const leaderboard = useMemo(() => {
     return servers
@@ -447,33 +476,36 @@ const handleSaveHomeStore = () => {
       .sort((a, b) => b.score - a.score)
   }, [servers])
 
-
   return (
     <div className="appBg">
       <div className="nav">
         <div className="navInner">
-   
+          <div className="brand">
+            <div className="brandMark" />
+            <div>
+              <div className="brandTitle">Dayta DNA</div>
+              <div className="brandSub">Store performance leaderboard</div>
+            </div>
+          </div>
+
+          <div className="navRight">
+            <div className="navBadge">Store {activeStore}</div>
+            <ThemeToggle theme={theme} setTheme={setTheme} />
+          </div>
         </div>
         <div className="navGlow" />
       </div>
 
       <main className="container">
         <div className="hero">
-        <h1 className="title" style={{ fontSize: 28 }}>
-          Store Leaderboard
-        </h1>
-          <div
-            style={{
-              marginTop: 6,
-              fontSize: 24,
-              color: "cyan",
-              fontWeight: 700,
-              opacity: 0.75,
-              letterSpacing: 0.3,
-            }}
-          >
+          <h1 className="title" style={{ fontSize: 28 }}>
+            Store Leaderboard
+          </h1>
+
+          <div className="heroStoreName">
             {activeStoreName}
           </div>
+
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time · BADA & Promos weekly · Last BADA refresh:{" "}
             {lastBadaRefresh || "Not published yet"}
@@ -483,81 +515,31 @@ const handleSaveHomeStore = () => {
         <div className="card">
           <div className="cardHeader">
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
-  role="tablist"
-  aria-label="Leaderboard links"
-  style={{
-    display: "inline-flex",
-    padding: 5,
-    borderRadius: 999,
-    border: "1px solid rgba(255,255,255,0.16)",
-    background: "linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))",
-    gap: 6,
-    boxShadow: "0 0 22px rgba(0,255,255,0.10)",
-  }}
->
-  <a
-    href={`https://www.daytadna.com/team/${activeStore}`}
-    target="_blank"
-    rel="noreferrer"
-    role="tab"
-    aria-selected={true}
-    title={`Open Team ${activeStore}`}
-    style={{
-      cursor: "pointer",
-      padding: "8px 14px",
-      borderRadius: 999,
-      fontWeight: 900,
-      fontSize: 13,
-      letterSpacing: 0.25,
-      color: "#ffffff",
-      background:
-        "linear-gradient(135deg, rgba(253,1,245,0.38), rgba(1,252,252,0.18))",
-      border: "1px solid rgba(255,255,255,0.20)",
-      boxShadow:
-        "0 0 16px rgba(253,1,245,0.22), inset 0 0 10px rgba(255,255,255,0.08)",
-      textDecoration: "none",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 6,
-    }}
-  >
-    View Team {activeStore}
-  </a>
+              <div className="leaderboardLinkPills">
+                <a
+                  href={`https://www.daytadna.com/team/${activeStore}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  role="tab"
+                  aria-selected={true}
+                  title={`Open Team ${activeStore}`}
+                  className="leaderboardPill leaderboardPillPrimary"
+                >
+                  View Team {activeStore}
+                </a>
 
-  <a
-    href="https://www.daytadna.com/league"
-    target="_blank"
-    rel="noreferrer"
-    role="tab"
-    aria-selected={false}
-    title="League Preview is Live"
-    style={{
-      cursor: "pointer",
-      padding: "8px 14px",
-      borderRadius: 999,
-      fontWeight: 900,
-      fontSize: 13,
-      letterSpacing: 0.25,
-      color: "#ffffff",
-      background:
-        "linear-gradient(135deg, rgba(1,252,252,0.26), rgba(253,1,245,0.18))",
-      border: "1px solid rgba(255,255,255,0.34)",
-      boxShadow:
-        "0 0 18px rgba(1,252,252,0.22), inset 0 0 10px rgba(255,255,255,0.08)",
-      textDecoration: "none",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 6,
-      whiteSpace: "nowrap",
-    }}
-  >
-    League Preview is Live
-  </a>
-</div>
+                <a
+                  href="https://www.daytadna.com/league"
+                  target="_blank"
+                  rel="noreferrer"
+                  role="tab"
+                  aria-selected={false}
+                  title="League Preview is Live"
+                  className="leaderboardPill leaderboardPillSecondary"
+                >
+                  League Preview is Live
+                </a>
               </div>
-
             </div>
 
             <div style={{ display: "flex", gap: 8 }}>
@@ -569,6 +551,7 @@ const handleSaveHomeStore = () => {
               >
                 ⎙
               </button>
+
               <button
                 className="iconBtn"
                 onClick={() => {
@@ -594,133 +577,145 @@ const handleSaveHomeStore = () => {
           </div>
 
           <>
-  <div className="printLeaderboardHeader">
-    <div>
-      <div className="printTitle">
-        Team {activeStore} · {activeStoreName}
-      </div>
-      <div className="printSub">
-        Scan to visit portal.daytadna.com
-      </div>
-    </div>
-
-    <div className="printQrBox">
-      <QRCodeSVG
-        value="https://portal.daytadna.com"
-        size={86}
-        level="M"
-        includeMargin
-      />
-    </div>
-  </div>
-
-  <div className="tableWrap" aria-label="Leaderboard table scroll area">
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Rank</th>
-          <th>Server</th>
-          <th className="scoreHeader" style={{ textAlign: "right" }}>
-            Score
-          </th>
-          <th style={{ textAlign: "right" }}>BADA %</th>
-          <th style={{ textAlign: "right" }}>Reviews</th>
-          <th style={{ textAlign: "right" }}>Rewards</th>
-          <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {leaderboard.map((s, idx) => {
-          const top = idx === 0
-          const second = idx === 1
-          const third = idx === 2
-          const rowClass = top ? "rowTop" : second ? "rowSecond" : third ? "rowThird" : ""
-
-          return (
-            <tr
-              key={s.id}
-              className={rowClass}
-              onClick={() => {
-                setSelectedStaffId(s.id)
-                setSelectedStaffName(s.name)
-
-                setSelectedScoreServer({
-                  name: s.name,
-                  badaPercent: s.badaPercent,
-                  reviews: s.reviews,
-                  rewards: s.rewards,
-                  promoDollars: s.promoDollars,
-                  sales: s.sales,
-                  score: s.score,
-                })
-
-                navigate(`/profile/${s.code}`)
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <td>
-                <div className="rankPill">{idx + 1}</div>
-              </td>
-
-              <td>
-                <div className="nameCell">
-                  <div>
-                    <div className="clickableName">
-                      {s.name}
-                    </div>
-                    <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
-                  </div>
+            <div className="printLeaderboardHeader">
+              <div>
+                <div className="printTitle">
+                  Team {activeStore} · {activeStoreName}
                 </div>
-              </td>
+                <div className="printSub">
+                  Scan to visit portal.daytadna.com
+                </div>
+              </div>
 
-              <td style={{ textAlign: "right" }}>
-                <span className="score" style={{ textDecoration: "underline dotted" }}>
-                  {s.score}
-                </span>
-              </td>
+              <div className="printQrBox">
+                <QRCodeSVG
+                  value="https://portal.daytadna.com"
+                  size={86}
+                  level="M"
+                  includeMargin
+                />
+              </div>
+            </div>
 
-              <td style={{ textAlign: "right" }}>
-                <span
-                  style={{
-                    color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
-                    fontWeight: 700,
-                  }}
-                >
-                  {Number(s.badaPercent.toFixed(1))}%
-                </span>
-              </td>
+            <div className="tableWrap" aria-label="Leaderboard table scroll area">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Server</th>
+                    <th className="scoreHeader" style={{ textAlign: "right" }}>
+                      Score
+                    </th>
+                    <th style={{ textAlign: "right" }}>BADA %</th>
+                    <th style={{ textAlign: "right" }}>Reviews</th>
+                    <th style={{ textAlign: "right" }}>Rewards</th>
+                    <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
+                  </tr>
+                </thead>
 
-              <td style={{ textAlign: "right" }}>{s.reviews}</td>
-              <td style={{ textAlign: "right" }}>{s.rewards}</td>
-              <td style={{ textAlign: "right", color: getPromoPenaltyColor(s.promoRate), fontWeight: 800 }}>
-                ${s.promoDollars.toFixed(2)}
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  </div>
+                <tbody>
+                  {leaderboard.map((s, idx) => {
+                    const top = idx === 0
+                    const second = idx === 1
+                    const third = idx === 2
+                    const rowClass = top
+                      ? "rowTop"
+                      : second
+                      ? "rowSecond"
+                      : third
+                      ? "rowThird"
+                      : ""
 
-  <div className="footerNote">
-    Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
-  </div>
-</>
-   
+                    return (
+                      <tr
+                        key={s.id}
+                        className={rowClass}
+                        onClick={() => {
+                          setSelectedStaffId(s.id)
+                          setSelectedStaffName(s.name)
+
+                          setSelectedScoreServer({
+                            name: s.name,
+                            badaPercent: s.badaPercent,
+                            reviews: s.reviews,
+                            rewards: s.rewards,
+                            promoDollars: s.promoDollars,
+                            sales: s.sales,
+                            score: s.score,
+                          })
+
+                          navigate(`/profile/${s.code}`)
+                        }}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>
+                          <div className="rankPill">{idx + 1}</div>
+                        </td>
+
+                        <td>
+                          <div className="nameCell">
+                            <div>
+                              <div className="clickableName">
+                                {s.name}
+                              </div>
+                              <div className="meta">Promo {(s.promoRate * 100).toFixed(2)}%</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td style={{ textAlign: "right" }}>
+                          <span className="score" style={{ textDecoration: "underline dotted" }}>
+                            {s.score}
+                          </span>
+                        </td>
+
+                        <td style={{ textAlign: "right" }}>
+                          <span
+                            style={{
+                              color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {Number(s.badaPercent.toFixed(1))}%
+                          </span>
+                        </td>
+
+                        <td style={{ textAlign: "right" }}>{s.reviews}</td>
+                        <td style={{ textAlign: "right" }}>{s.rewards}</td>
+                        <td
+                          style={{
+                            textAlign: "right",
+                            color: getPromoPenaltyColor(s.promoRate),
+                            fontWeight: 800,
+                          }}
+                        >
+                          ${s.promoDollars.toFixed(2)}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="footerNote">
+              Tip: Click <span className="mono"> "?" </span> in the top bar to see how scoring works.
+            </div>
+          </>
         </div>
       </main>
+
       <ScoringInfoModal
         open={infoOpen}
         onClose={() => setInfoOpen(false)}
         onOpenChangelog={() => setChangelogOpen(true)}
       />
+
       <ChangelogModal
         open={changelogOpen}
         onClose={() => setChangelogOpen(false)}
       />
 
-      {/* ✅ Render the modal once, outside the table */}
       <ServerClicksModal
         open={clicksOpen}
         onClose={() => setClicksOpen(false)}
@@ -728,6 +723,7 @@ const handleSaveHomeStore = () => {
         staffId={selectedStaffId}
         staffName={selectedStaffName}
       />
+
       <HomeStoreModal
         open={storePickerOpen}
         stores={storesList}
@@ -737,6 +733,7 @@ const handleSaveHomeStore = () => {
         setSelectedStore={setSelectedStore}
         onConfirm={handleSaveHomeStore}
       />
+
       <ScoreBreakdownModal
         open={scoreOpen}
         onClose={() => setScoreOpen(false)}
@@ -748,9 +745,19 @@ const handleSaveHomeStore = () => {
 }
 
 export default function App() {
+  const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme)
+    localStorage.setItem("app_theme", theme)
+  }, [theme])
+
   return (
     <Routes>
-      <Route path="/" element={<LeaderboardApp />} />
+      <Route
+        path="/"
+        element={<LeaderboardApp theme={theme} setTheme={setTheme} />}
+      />
       <Route path="/profile/:staffCode" element={<ServerProfileRoute />} />
     </Routes>
   )

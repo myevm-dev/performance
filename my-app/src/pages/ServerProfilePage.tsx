@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
-// import StaffBadges, { type StaffBadge } from "../components/StaffBadges"
 
 type ServerProfile = {
   id: string
@@ -26,9 +25,13 @@ type ServerProfilePageProps = {
   onBack: () => void
 }
 
+type BadaWindow = "all" | "12w" | "4w"
 
 function formatMoney(value?: number) {
-  return `$${(value ?? 0).toLocaleString()}`
+  return `$${(value ?? 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
 }
 
 function formatPercent(value?: number, digits = 1) {
@@ -111,28 +114,43 @@ function StatCard({
     <div
       style={{
         borderRadius: 18,
-        border: "1px solid rgba(255,255,255,0.10)",
-        background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-        boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
+        border: "1px solid var(--stroke)",
+        background: "color-mix(in srgb, var(--card2) 46%, transparent)",
+        boxShadow: "0 14px 34px rgba(0,0,0,0.14)",
         padding: 16,
       }}
     >
-      <div style={{ fontSize: 12, opacity: 0.72, fontWeight: 800, letterSpacing: 0.3 }}>
+      <div
+        style={{
+          fontSize: 12,
+          color: "var(--muted)",
+          fontWeight: 900,
+          letterSpacing: 0.3,
+        }}
+      >
         {label}
       </div>
+
       <div
         style={{
           marginTop: 8,
           fontSize: 28,
           fontWeight: 950,
-          color: accent || "white",
+          color: accent || "var(--text)",
           lineHeight: 1.05,
         }}
       >
         {value}
       </div>
+
       {sub ? (
-        <div style={{ marginTop: 8, fontSize: 12, opacity: 0.65 }}>
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 12,
+            color: "var(--muted)",
+          }}
+        >
           {sub}
         </div>
       ) : null}
@@ -165,108 +183,69 @@ function ScoreBreakdownModal({
   const rewardPoints = 150 * (rewards / 10)
 
   return (
-    <div
-      onClick={onClose}
-      role="presentation"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        background: "rgba(0,0,0,0.62)",
-        display: "grid",
-        placeItems: "center",
-        padding: 16,
-      }}
-    >
+    <div className="modalOverlay" onClick={onClose} role="presentation">
       <div
+        className="modalCard"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        style={{
-          width: "min(760px, 96vw)",
-          maxHeight: "90vh",
-          overflow: "auto",
-          borderRadius: 22,
-          border: "1px solid rgba(255,255,255,0.10)",
-          background: "rgba(10,10,18,0.96)",
-          boxShadow: "0 18px 60px rgba(0,0,0,0.5)",
-          color: "white",
-        }}
       >
-        <div
-          style={{
-            padding: "18px 18px 14px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 24, fontWeight: 950 }}>{server.name} Score Breakdown</div>
-            <div style={{ fontSize: 13, opacity: 0.68 }}>Current score inputs and weighted formula</div>
-          </div>
-
+        <div className="modalHeader">
           <button
             type="button"
             onClick={onClose}
+            className="iconBtn"
             aria-label="Close"
-            style={{
-              border: "none",
-              cursor: "pointer",
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: "rgba(255,255,255,0.08)",
-              color: "inherit",
-              fontWeight: 900,
-            }}
+            title="Close"
           >
             ✕
           </button>
+
+          <div className="modalTitle">{server.name} Score Breakdown</div>
+          <div className="modalSub">
+            Current score inputs and weighted formula
+          </div>
         </div>
 
-        <div style={{ padding: 18 }}>
-          <div
-            style={{
-              borderRadius: 16,
-              padding: 14,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.04)",
-              fontSize: 14,
-              fontWeight: 700,
-              lineHeight: 1.6,
-            }}
-          >
-            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) - (PromoPenalty × 0.15)
+        <div className="modalBody">
+          <div className="codeBlock">
+            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ 25)) + (150 ×
+            (Rewards ÷ 10)) - (PromoPenalty × 0.15)
           </div>
 
           <div
             style={{
-              marginTop: 16,
+              marginTop: 14,
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 14,
+              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gap: 12,
             }}
           >
-            <StatCard label="BADA %" value={formatPercent(badaPercent)} accent={getBadaColor(badaPercent)} />
+            <StatCard
+              label="BADA %"
+              value={formatPercent(badaPercent)}
+              accent={getBadaColor(badaPercent)}
+            />
             <StatCard label="Reviews" value={String(reviews)} accent="#67e8f9" />
             <StatCard label="Rewards" value={String(rewards)} accent="#c084fc" />
-            <StatCard label="Promo Rate" value={formatPercent(promoRate * 100, 2)} accent={getPromoPenaltyColor(promoRate)} />
+            <StatCard
+              label="Promo Rate"
+              value={formatPercent(promoRate * 100, 2)}
+              accent={getPromoPenaltyColor(promoRate)}
+            />
           </div>
 
           <div
             style={{
               marginTop: 16,
               borderRadius: 18,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.03)",
+              border: "1px solid var(--stroke)",
+              background: "color-mix(in srgb, var(--card2) 38%, transparent)",
               overflow: "hidden",
             }}
           >
             {[
-              [`460 × (${badaPercent} ÷ 140)`, badaPoints.toFixed(2)],
+              [`460 × (${badaPercent.toFixed(1)} ÷ 140)`, badaPoints.toFixed(2)],
               [`390 × (${reviews} ÷ 25)`, reviewPoints.toFixed(2)],
               [`150 × (${rewards} ÷ 10)`, rewardPoints.toFixed(2)],
               [`${promoPenaltyBase} × 0.15`, `-${promoWeighted.toFixed(2)}`],
@@ -280,20 +259,20 @@ function ScoreBreakdownModal({
                   gridTemplateColumns: "1fr auto",
                   gap: 12,
                   padding: "14px 16px",
-                  borderBottom: index === 5 ? "none" : "1px solid rgba(255,255,255,0.06)",
+                  borderBottom:
+                    index === 5 ? "none" : "1px solid var(--stroke)",
                   fontSize: 14,
                   alignItems: "center",
                 }}
               >
-                <div style={{ opacity: 0.82 }}>{label}</div>
+                <div style={{ color: "var(--muted)" }}>{label}</div>
                 <div
                   style={{
-                    fontWeight: 900,
-                    color: label === "Promo/Void $" || label === "Sales"
-                      ? "white"
-                      : label === `${promoPenaltyBase} × 0.15`
-                      ? getPromoPenaltyColor(promoRate)
-                      : "#e5e7eb",
+                    fontWeight: 950,
+                    color:
+                      label === `${promoPenaltyBase} × 0.15`
+                        ? getPromoPenaltyColor(promoRate)
+                        : "var(--text)",
                   }}
                 >
                   {value}
@@ -307,15 +286,33 @@ function ScoreBreakdownModal({
               marginTop: 16,
               borderRadius: 18,
               padding: 18,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "linear-gradient(90deg, rgba(253,1,245,0.16), rgba(1,252,252,0.12))",
+              border: "1px solid var(--stroke)",
+              background:
+                "linear-gradient(90deg, rgba(253,1,245,0.18), rgba(1,252,252,0.14))",
               textAlign: "center",
+              boxShadow:
+                "0 0 24px rgba(253,1,245,0.10), 0 0 24px rgba(1,252,252,0.08)",
             }}
           >
-            <div style={{ fontSize: 12, opacity: 0.75, fontWeight: 800, letterSpacing: 0.3 }}>
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--muted)",
+                fontWeight: 900,
+                letterSpacing: 0.3,
+              }}
+            >
               FINAL SCORE
             </div>
-            <div style={{ marginTop: 8, fontSize: 42, fontWeight: 950 }}>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 42,
+                fontWeight: 950,
+                color: "var(--text)",
+              }}
+            >
               {score}
             </div>
           </div>
@@ -330,614 +327,597 @@ export default function ServerProfilePage({
   onBack,
 }: ServerProfilePageProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
-  const [activityFilter, setActivityFilter] = useState<"all" | "review" | "rewards">("all")
+  const [activityFilter, setActivityFilter] = useState<
+    "all" | "review" | "rewards"
+  >("all")
+  const [badaWindow, setBadaWindow] = useState<BadaWindow>("12w")
 
   if (!server) return null
-
-
-/*
-const badges: StaffBadge[] = [
-  { id: "first-review", label: "First Review", image: "/badges/firstreviewbadge.png", unlocked: false },
-  { id: "five-reviews", label: "5 Reviews", image: "/badges/firstreviewbadge.png", unlocked: false },
-  { id: "top-store", label: "Top Store", image: "/badges/firstreviewbadge.png", unlocked: false },
-  { id: "top-district", label: "Top District", image: "/badges/firstreviewbadge.png", unlocked: false },
-  { id: "top-region", label: "Top Region", image: "/badges/firstreviewbadge.png", unlocked: false },
-  { id: "top-company", label: "Top Company", image: "/badges/firstreviewbadge.png", unlocked: false },
-]
-*/
 
   const gradient = getGlassGradient(server.avatarSeed || server.id)
 
   const badaPercent = server.badaPercent ?? 0
   const reviews = server.reviews ?? 0
   const rewards = server.rewards ?? 0
-
   const score = server.score ?? 0
+  const sales = server.sales ?? 0
+  const promoDollars = server.promoDollars ?? 0
+  const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
 
-  const badaBars = useMemo(() => buildBadaBars(server.badaWeeks), [server.badaWeeks])
+  const badaBars = useMemo(
+    () => buildBadaBars(server.badaWeeks),
+    [server.badaWeeks]
+  )
 
-  const chartValues = badaBars
-    .map((bar) => bar.value)
-    .filter((value): value is number => typeof value === "number")
+  const visibleBadaBars = useMemo(() => {
+    if (badaWindow === "4w") return badaBars.slice(-4)
+    if (badaWindow === "12w") return badaBars.slice(-12)
+    return badaBars
+  }, [badaBars, badaWindow])
 
-  const chartMin = 80
-  const chartMax = Math.max(200, ...chartValues)
-  const chartRange = chartMax - chartMin
+  const plottedBadaBars = visibleBadaBars.filter(
+    (bar): bar is { weekLabel: string; value: number } =>
+      typeof bar.value === "number"
+  )
 
-  const getChartY = (value: number) => {
-    const safeValue = Math.max(chartMin, value)
-    return ((safeValue - chartMin) / chartRange) * 100
+  const chartMin = 50
+  const chartMax = 210
+  const chartTicks = [210, 180, 140, 100, 50]
+
+  const svgWidth = 1000
+  const svgHeight = 330
+  const padLeft = 52
+  const padRight = 24
+  const padTop = 20
+  const padBottom = 42
+  const plotWidth = svgWidth - padLeft - padRight
+  const plotHeight = svgHeight - padTop - padBottom
+
+  const getY = (value: number) => {
+    const clamped = Math.max(chartMin, Math.min(chartMax, value))
+    return padTop + ((chartMax - clamped) / (chartMax - chartMin)) * plotHeight
   }
-  const activityRows = useMemo(() => buildDummyActivity(reviews, rewards), [reviews, rewards])
+
+  const getX = (index: number, total: number) => {
+    if (total <= 1) return padLeft + plotWidth / 2
+    return padLeft + (index / (total - 1)) * plotWidth
+  }
+
+  const linePoints = plottedBadaBars
+    .map((bar, index) => `${getX(index, plottedBadaBars.length)},${getY(bar.value)}`)
+    .join(" ")
+
+  const activityRows = useMemo(
+    () => buildDummyActivity(reviews, rewards),
+    [reviews, rewards]
+  )
 
   const filteredActivity = useMemo(() => {
-    if (activityFilter === "review") return activityRows.filter((row) => row.type === "Review")
-    if (activityFilter === "rewards") return activityRows.filter((row) => row.type === "Rewards")
+    if (activityFilter === "review") {
+      return activityRows.filter((row) => row.type === "Review")
+    }
+
+    if (activityFilter === "rewards") {
+      return activityRows.filter((row) => row.type === "Rewards")
+    }
+
     return activityRows
   }, [activityRows, activityFilter])
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top left, rgba(253,1,245,0.10), transparent 22%), radial-gradient(circle at top right, rgba(1,252,252,0.08), transparent 20%), #060617",
-        color: "white",
-        padding: 18,
-        boxSizing: "border-box",
-      }}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: 1500,
-          margin: "0 auto",
-          borderRadius: 28,
-          border: "1px solid rgba(255,255,255,0.08)",
-          background: "linear-gradient(180deg, rgba(7,10,28,0.98), rgba(6,8,22,0.98))",
-          boxShadow: "0 25px 80px rgba(0,0,0,0.45)",
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            height: 4,
-            background: `linear-gradient(90deg, ${gradient.start}, ${gradient.end})`,
-          }}
-        />
+    <div className="appBg">
+      <div className="nav">
+        <div className="navInner">
+          <div className="brand">
+            <div className="brandMark" />
 
-        
+            <div>
+              <div className="brandTitle">Dayta DNA</div>
+              <div className="brandSub">Server performance profile</div>
+            </div>
+          </div>
 
-        <div
-          style={{
-            padding: 20,
-            display: "grid",
-            gridTemplateColumns: "300px minmax(0, 1fr)",
-            gap: 20,
-          }}
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="navRight">
+            <div className="navBadge">
+              {server.storeName || `Store ${server.storeNumber || ""}`}
+            </div>
+
             <button
               type="button"
               onClick={onBack}
+              className="btnPrimary"
               style={{
-                width: "100%",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderTop: `3px solid ${gradient.start}`,
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025))",
-                color: "white",
-                borderRadius: 18,
-                padding: "14px 18px",
-                fontWeight: 950,
-                fontSize: 15,
-                cursor: "pointer",
-                textAlign: "center",
-                boxShadow: "0 12px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.08)",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                letterSpacing: 0.2,
+                borderRadius: 999,
+                whiteSpace: "nowrap",
               }}
             >
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 26,
-                  height: 26,
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  fontSize: 15,
-                  lineHeight: 1,
-                }}
-              >
-                ←
-              </span>
-
-              <span>Back</span>
+              ← Back
             </button>
+          </div>
+        </div>
 
+        <div className="navGlow" />
+      </div>
+
+      <main className="container" style={{ maxWidth: 1200 }}>
+        <div className="hero">
+          <h1 className="title" style={{ fontSize: 34 }}>
+            {server.name}
+          </h1>
+
+          <div className="heroStoreName">
+            {server.storeName || `Store ${server.storeNumber || ""}`}
+          </div>
+
+          <p className="subtitle">
+            BADA performance · Review clicks · Rewards clicks · Promo/Void impact
+          </p>
+        </div>
+
+        <div
+          className="serverProfileGrid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "300px minmax(0, 1fr)",
+            gap: 16,
+            alignItems: "start",
+          }}
+        >
+          <section className="card" style={{ marginTop: 0 }}>
             <div
               style={{
-                borderRadius: 24,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-                overflow: "hidden",
+                height: 4,
+                background: `linear-gradient(90deg, ${gradient.start}, ${gradient.end})`,
               }}
-            >
+            />
+
+            <div style={{ padding: 18 }}>
               <div
                 style={{
-                  height: 4,
-                  background: "linear-gradient(90deg, rgba(253,1,245,0.9), rgba(1,252,252,0.9))",
-                }}
-              />
-
-              <div style={{ padding: 18 }}>
-                <div
-                   
-                    style={{
-                        width: "100%",
-                        aspectRatio: "1 / 1",
-                        borderRadius: 24,
-                        overflow: "hidden",
-                        background: "rgba(255,255,255,0.05)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.18)",
-                        margin: "0 auto",
-                    }}
-                    >
-                    <div
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        borderRadius: 24,
-                        overflow: "hidden",
-                        position: "relative",
-                        background: `linear-gradient(135deg, ${gradient.start}, ${gradient.end})`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {/* Letter */}
-                      <div
-                        style={{
-                          fontSize: 42,
-                          fontWeight: 900,
-                          color: "rgba(0,0,0,0.75)",
-                          letterSpacing: 1,
-                          zIndex: 2,
-                        }}
-                      >
-                        {server.name?.charAt(0) ?? "?"}
-                      </div>
-
-                      {/* Glass overlay */}
-                      <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          borderRadius: 24,
-                          background:
-                            "linear-gradient(180deg, rgba(255,255,255,0.25), rgba(255,255,255,0.05))",
-                          pointerEvents: "none",
-                          zIndex: 1,
-                        }}
-                      />
-                    </div>
-                    </div>
-
-                <div
-                style={{
-                  marginTop: 16,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
+                  width: "100%",
+                  aspectRatio: "1 / 1",
+                  borderRadius: 22,
+                  overflow: "hidden",
+                  background: "color-mix(in srgb, var(--card2) 40%, transparent)",
+                  border: "1px solid var(--stroke)",
+                  boxShadow: "0 12px 30px rgba(0,0,0,0.18)",
                 }}
               >
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 22,
+                    overflow: "hidden",
+                    position: "relative",
+                    background: `linear-gradient(135deg, ${gradient.start}, ${gradient.end})`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 58,
+                      fontWeight: 950,
+                      color: "rgba(0,0,0,0.76)",
+                      letterSpacing: 1,
+                      zIndex: 2,
+                    }}
+                  >
+                    {server.name?.charAt(0) ?? "?"}
+                  </div>
+
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 22,
+                      background:
+                        "linear-gradient(180deg, rgba(255,255,255,0.28), rgba(255,255,255,0.06))",
+                      pointerEvents: "none",
+                      zIndex: 1,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 18, textAlign: "center" }}>
                 <button
                   type="button"
                   onClick={() => setScoreOpen(true)}
                   style={{
                     border: "none",
                     background: "transparent",
-                    color: "white",
+                    color: "var(--text)",
                     padding: 0,
                     cursor: "pointer",
                     textAlign: "center",
                   }}
                 >
-                  <div style={{ fontSize: 50, fontWeight: 950, lineHeight: 1 }}>
-                    {score}
-                  </div>
                   <div
                     style={{
-                      marginTop: 6,
+                      fontSize: 52,
+                      fontWeight: 950,
+                      lineHeight: 1,
+                      color: "var(--a2)",
+                      textShadow: "0 0 18px rgba(1,252,252,0.18)",
+                    }}
+                  >
+                    {score}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 7,
                       fontSize: 12,
-                      opacity: 0.72,
+                      color: "var(--muted)",
                       textDecoration: "underline dotted",
+                      fontWeight: 800,
                     }}
                   >
                     View score breakdown
                   </div>
                 </button>
 
-                <div style={{ marginTop: 18, fontSize: 24, fontWeight: 900 }}>
+                <div
+                  style={{
+                    marginTop: 18,
+                    fontSize: 24,
+                    fontWeight: 950,
+                    color: "var(--text)",
+                  }}
+                >
                   {server.name}
                 </div>
 
-                <div style={{ marginTop: 6, fontSize: 15, opacity: 0.78 }}>
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 14,
+                    color: "var(--muted)",
+                  }}
+                >
                   {server.storeName || `Store ${server.storeNumber || ""}`}
                 </div>
               </div>
 
-                <div
-                  style={{
-                    marginTop: 16,
-                    display: "grid",
-                    gap: 10,
-                  }}
-                >
-                  {[
-                    ["Store Rank", "Soon", "#67e8f9"],
-                    ["District Rank", "Soon", "#c084fc"],
-                    ["Region Rank", "Soon", "#fb7185"],
-                    ["Company Rank", "Soon", "#facc15"],
-                    ].map(([label, value, color]) => (
-                    <div
-                      key={label}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        alignItems: "center",
-                        padding: "10px 12px",
-                        borderRadius: 14,
-                        background: "rgba(255,255,255,0.04)",
-                        border: "1px solid rgba(255,255,255,0.06)",
-                      }}
-                    >
-                      <span style={{ fontSize: 13, opacity: 0.74, fontWeight: 800 }}>{label}</span>
-                      <span
-                        style={{
-                            fontSize: 15,
-                            fontWeight: 900,
-                            color,
-                            background: "rgba(255,255,255,0.06)",
-                            padding: "4px 10px",
-                            borderRadius: 999,
-                            border: "1px solid rgba(255,255,255,0.08)",
-                        }}
-                        >
-                        {value}
-                        </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                borderRadius: 24,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 900, opacity: 0.88 }}>
-                Quick Snapshot
-              </div>
-
               <div
                 style={{
-                  marginTop: 12,
+                  marginTop: 18,
                   display: "grid",
                   gap: 10,
                 }}
               >
-                <div style={{ fontSize: 13, opacity: 0.75, lineHeight: 1.6 }}>
-                  .
-                </div>
-
-                <div
-                  style={{
-                    padding: 12,
-                    borderRadius: 16,
-                    background: "rgba(1,252,252,0.06)",
-                    border: "1px solid rgba(1,252,252,0.12)",
-                    fontSize: 12,
-                    opacity: 0.86,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  .
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            <div
-              style={{
-                borderRadius: 24,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px 18px",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 950 }}>BADA Performance</div>
-                
-                </div>
-
-                <div
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    background: "rgba(255,255,255,0.04)",
-                    fontSize: 12,
-                    fontWeight: 900,
-                    color: getBadaColor(badaPercent),
-                  }}
-                >
-                  Trailing 4 week average: {formatPercent(badaPercent)}
-                </div>
-              </div>
-
-              <div style={{ padding: 18 }}>
-                <div
-                  style={{
-                    height: 280,
-                    borderRadius: 18,
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    background:
-                      "linear-gradient(180deg, rgba(1,252,252,0.04), rgba(253,1,245,0.04)), rgba(0,0,0,0.12)",
-                    padding: 18,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
+                {[
+                  ["Store Rank", "Soon", "#67e8f9"],
+                  ["District Rank", "Soon", "#c084fc"],
+                  ["Region Rank", "Soon", "#fb7185"],
+                  ["Company Rank", "Soon", "#facc15"],
+                ].map(([label, value, color]) => (
                   <div
+                    key={label}
                     style={{
-                      display: "grid",
-                      gridTemplateRows: "repeat(4, 1fr)",
-                      gap: 0,
-                      flex: 1,
-                      position: "relative",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      alignItems: "center",
+                      padding: "10px 12px",
+                      borderRadius: 14,
+                      background:
+                        "color-mix(in srgb, var(--card2) 38%, transparent)",
+                      border: "1px solid var(--stroke)",
                     }}
                   >
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      bottom: `${getChartY(140)}%`,
-                      height: 2,
-                      background: "rgba(128, 239, 239, 0.9)",
-                      zIndex: 2,
-                    }}
-                  />
-                    {[chartMax, 160, 140, 120, 100].map((tick) => (
-                      <div
-                        key={tick}
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          right: 0,
-                          bottom: `${getChartY(tick)}%`,
-                          borderTop: "1px dashed rgba(255,255,255,0.10)",
-                        }}
-                      >
-                        <span
-                          style={{
-                            position: "absolute",
-                            top: -10,
-                            left: 0,
-                            fontSize: 11,
-                            opacity: 0.45,
-                          }}
-                        >
-                          {tick}%
-                        </span>
-                      </div>
-                    ))}
-
-                    <div
+                    <span
                       style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "flex-end",
-                        gap: 12,
-                        paddingTop: 6,
+                        fontSize: 13,
+                        color: "var(--muted)",
+                        fontWeight: 900,
                       }}
                     >
-                      {badaBars.map((bar, index) => {
-                        const hasValue = typeof bar.value === "number"
-                        const value = bar.value ?? 0
+                      {label}
+                    </span>
 
-                        return (
-                          <div
-                            key={`${bar.weekLabel}-${index}`}
-                            style={{
-                              flex: 1,
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              justifyContent: "flex-end",
-                              gap: 6,
-                              height: "100%",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: 11,
-                                fontWeight: 900,
-                                opacity: 0.72,
-                                minHeight: 14,
-                                textAlign: "center",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {bar.weekLabel}
-                            </div>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 950,
+                        color,
+                        background:
+                          "color-mix(in srgb, var(--card2) 42%, transparent)",
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        border: "1px solid var(--stroke)",
+                      }}
+                    >
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
-                            {hasValue ? (
-                              <div
-                                style={{
-                                  width: "100%",
-                                  maxWidth: 52,
-                                  height: `${getChartY(value)}%`,
-                                  minHeight: 18,
-                                  borderRadius: 14,
-                                  background:
-                                    value >= 140
-                                      ? "linear-gradient(180deg, rgba(34,197,94,0.95), rgba(16,185,129,0.82))"
-                                      : "linear-gradient(180deg, rgba(239,68,68,0.95), rgba(185,28,28,0.82))",
-                                  boxShadow:
-                                    value >= 140
-                                      ? "0 8px 24px rgba(34,197,94,0.18)"
-                                      : "0 8px 24px rgba(239,68,68,0.18)",
-                                  border: "1px solid rgba(255,255,255,0.10)",
-                                  display: "flex",
-                                  alignItems: "flex-end",
-                                  justifyContent: "center",
-                                  paddingBottom: 8,
-                                  fontSize: 10,
-                                  fontWeight: 900,
-                                  color: "white",
-                                }}
-                              >
-                                {formatPercent(value)}
-                              </div>
-                            ) : (
-                              <div
-                                style={{
-                                  width: "100%",
-                                  maxWidth: 52,
-                                  height: 42,
-                                  borderRadius: 14,
-                                  border: "1px dashed rgba(255,255,255,0.18)",
-                                  background: "rgba(255,255,255,0.04)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  fontSize: 11,
-                                  fontWeight: 900,
-                                  color: "rgba(255,255,255,0.55)",
-                                }}
-                              >
-                                N/A
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
-                          
-                        
-                    </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <section className="card" style={{ marginTop: 0 }}>
+              <div className="cardHeader">
+                <div>
+                  <div className="cardTitle">Performance Snapshot</div>
+                  <div className="cardSub">Current server-level score inputs</div>
+                </div>
+              </div>
+
+              <div
+                className="profileStatsGrid"
+                style={{
+                  padding: 18,
+                  display: "grid",
+                  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                  gap: 12,
+                }}
+              >
+                <StatCard
+                  label="BADA %"
+                  value={formatPercent(badaPercent)}
+                  accent={getBadaColor(badaPercent)}
+                  sub="Target is 140%"
+                />
+
+                <StatCard
+                  label="Reviews"
+                  value={String(reviews)}
+                  accent="#67e8f9"
+                  sub="Trailing click count"
+                />
+
+                <StatCard
+                  label="Rewards"
+                  value={String(rewards)}
+                  accent="#c084fc"
+                  sub="Trailing click count"
+                />
+
+                <StatCard
+                  label="Promo/Void"
+                  value={formatMoney(promoDollars)}
+                  accent={getPromoPenaltyColor(promoRate)}
+                  sub={`${formatPercent(promoRate * 100, 2)} of sales`}
+                />
+              </div>
+            </section>
+
+            <section className="card" style={{ marginTop: 0 }}>
+              <div className="cardHeader">
+                <div>
+                  <div className="cardTitle" style={{ fontSize: 18 }}>
+                    Server BADA Over Time
+                  </div>
+                  <div className="cardSub">
+                    Recent published BADA weeks
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    justifyContent: "flex-end",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      fontWeight: 800,
+                    }}
+                  >
+                    {badaBars.length} published weeks
                   </div>
 
                   <div
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(3, 1fr)",
-                      gap: 8,
-                      marginTop: 8,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: 4,
+                      borderRadius: 999,
+                      border: "1px solid var(--stroke)",
+                      background:
+                        "color-mix(in srgb, var(--card2) 48%, transparent)",
                     }}
                   >
-                    <StatCard
-                      label="Target"
-                      value="140.0%"
-                      accent="#67e8f9"
-                    />
-                    <StatCard
-                      label="Current"
-                      value={formatPercent(badaPercent)}
-                      accent={getBadaColor(badaPercent)}
-                    />
-                    <StatCard
-                      label="Gap"
-                      value={formatPercent(Math.abs(140 - badaPercent))}
-                      accent={badaPercent >= 140 ? "#22c55e" : "#ef4444"}
-                    />
+                    {[
+                      { key: "all" as const, label: "All" },
+                      { key: "12w" as const, label: "12W" },
+                      { key: "4w" as const, label: "4W" },
+                    ].map((item) => {
+                      const active = badaWindow === item.key
+
+                      return (
+                        <button
+                          key={item.key}
+                          type="button"
+                          onClick={() => setBadaWindow(item.key)}
+                          style={{
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "8px 16px",
+                            borderRadius: 999,
+                            fontSize: 13,
+                            fontWeight: 900,
+                            color: active ? "#fff" : "var(--muted)",
+                            background: active
+                              ? "linear-gradient(135deg, rgba(37,99,235,0.95), rgba(59,130,246,0.92))"
+                              : "transparent",
+                            boxShadow: active
+                              ? "0 8px 20px rgba(37,99,235,0.22)"
+                              : "none",
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 999,
+                      border: "1px solid var(--stroke)",
+                      background:
+                        "color-mix(in srgb, var(--card2) 62%, transparent)",
+                      fontSize: 14,
+                      fontWeight: 950,
+                      color: getBadaColor(badaPercent),
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Average: {formatPercent(badaPercent)}
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/*
-            <div
-              style={{
-                borderRadius: 24,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  padding: "16px 18px",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 12,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: 18, fontWeight: 900 }}>
-                    Accomplishments (coming soon)
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ padding: 18 }}>
-                <StaffBadges badges={badges} visibleCount={5} showDemoBadge={false} />
-              </div>
-            </div>
-            */}
-
-            <div
-              style={{
-                borderRadius: 24,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-                boxShadow: "0 14px 34px rgba(0,0,0,0.28)",
-                overflow: "hidden",
-              }}
-            >
-
-
-              
 
               <div style={{ padding: 18 }}>
                 <div
+                  style={{
+                    borderRadius: 20,
+                    border: "1px solid var(--stroke)",
+                    background:
+                      "linear-gradient(180deg, rgba(1,252,252,0.04), rgba(253,1,245,0.035)), color-mix(in srgb, var(--card2) 42%, transparent)",
+                    padding: 16,
+                    overflow: "hidden",
+                  }}
+                >
+                  {plottedBadaBars.length > 0 ? (
+                    <div style={{ width: "100%", overflowX: "auto" }}>
+                      <svg
+                        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                        style={{
+                          width: "100%",
+                          minWidth: 760,
+                          height: "auto",
+                          display: "block",
+                        }}
+                      >
+                        {chartTicks.map((tick) => {
+                          const y = getY(tick)
+
+                          return (
+                            <g key={tick}>
+                              <line
+                                x1={padLeft}
+                                x2={svgWidth - padRight}
+                                y1={y}
+                                y2={y}
+                                stroke={
+                                  tick === 140
+                                    ? "rgba(107,114,128,0.85)"
+                                    : "rgba(148,163,184,0.28)"
+                                }
+                                strokeWidth={tick === 140 ? 2.2 : 1}
+                                strokeDasharray={tick === 140 ? "0" : "4 6"}
+                              />
+                              <text
+                                x={4}
+                                y={y + 4}
+                                fontSize="12"
+                                fontWeight="800"
+                                fill="var(--muted)"
+                              >
+                                {tick}%
+                              </text>
+                            </g>
+                          )
+                        })}
+
+                        {plottedBadaBars.map((bar, index) => {
+                          const x = getX(index, plottedBadaBars.length)
+
+                          return (
+                            <line
+                              key={`v-${bar.weekLabel}-${index}`}
+                              x1={x}
+                              x2={x}
+                              y1={padTop}
+                              y2={svgHeight - padBottom}
+                              stroke="rgba(148,163,184,0.18)"
+                              strokeWidth="1"
+                            />
+                          )
+                        })}
+
+                        {linePoints ? (
+                          <polyline
+                            fill="none"
+                            stroke="#e85d2f"
+                            strokeWidth="3"
+                            strokeLinejoin="round"
+                            strokeLinecap="round"
+                            points={linePoints}
+                          />
+                        ) : null}
+
+                        {plottedBadaBars.map((bar, index) => {
+                          const x = getX(index, plottedBadaBars.length)
+                          const y = getY(bar.value)
+
+                          return (
+                            <g key={`p-${bar.weekLabel}-${index}`}>
+                              <circle
+                                cx={x}
+                                cy={y}
+                                r="5"
+                                fill="#e85d2f"
+                                stroke="#ffffff"
+                                strokeWidth="2"
+                              />
+                              <text
+                                x={x}
+                                y={svgHeight - 10}
+                                textAnchor="middle"
+                                fontSize="12"
+                                fontWeight="800"
+                                fill="var(--text)"
+                              >
+                                {bar.weekLabel}
+                              </text>
+                            </g>
+                          )
+                        })}
+                      </svg>
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        minHeight: 260,
+                        display: "grid",
+                        placeItems: "center",
+                        color: "var(--muted)",
+                        fontWeight: 900,
+                      }}
+                    >
+                      No BADA history published for this server yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="card" style={{ marginTop: 0 }}>
+              <div className="cardHeader">
+                <div>
+                  <div className="cardTitle">Guest Engagement</div>
+                  <div className="cardSub">Review and Rewards activity</div>
+                </div>
+              </div>
+
+              <div style={{ padding: 18 }}>
+                <div
+                  className="profileEngagementGrid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
@@ -948,30 +928,32 @@ const badges: StaffBadge[] = [
                   <button
                     type="button"
                     onClick={() =>
-                      setActivityFilter((prev) => (prev === "review" ? "all" : "review"))
+                      setActivityFilter((prev) =>
+                        prev === "review" ? "all" : "review"
+                      )
                     }
                     style={{
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--stroke)",
                       cursor: "pointer",
                       textAlign: "left",
                       borderRadius: 18,
                       background:
                         activityFilter === "review"
                           ? "linear-gradient(180deg, rgba(103,232,249,0.16), rgba(255,255,255,0.03))"
-                          : "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                          : "color-mix(in srgb, var(--card2) 42%, transparent)",
                       boxShadow:
                         activityFilter === "review"
                           ? "0 14px 34px rgba(103,232,249,0.12)"
-                          : "0 14px 34px rgba(0,0,0,0.28)",
+                          : "0 14px 34px rgba(0,0,0,0.10)",
                       padding: 16,
-                      color: "inherit",
+                      color: "var(--text)",
                     }}
                   >
                     <div
                       style={{
                         fontSize: 12,
-                        opacity: 0.72,
-                        fontWeight: 800,
+                        color: "var(--muted)",
+                        fontWeight: 900,
                         letterSpacing: 0.3,
                       }}
                     >
@@ -981,7 +963,7 @@ const badges: StaffBadge[] = [
                     <div
                       style={{
                         marginTop: 8,
-                        fontSize: 28,
+                        fontSize: 30,
                         fontWeight: 950,
                         color: "#67e8f9",
                         lineHeight: 1.05,
@@ -994,11 +976,13 @@ const badges: StaffBadge[] = [
                       style={{
                         marginTop: 8,
                         fontSize: 11,
-                        opacity: 0.58,
-                        fontWeight: 800,
+                        color: "var(--muted)",
+                        fontWeight: 900,
                       }}
                     >
-                      {activityFilter === "review" ? "Showing reviews" : "Click to filter"}
+                      {activityFilter === "review"
+                        ? "Showing reviews"
+                        : "Click to filter"}
                     </div>
                   </button>
 
@@ -1010,27 +994,27 @@ const badges: StaffBadge[] = [
                       )
                     }
                     style={{
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      border: "1px solid var(--stroke)",
                       cursor: "pointer",
                       textAlign: "left",
                       borderRadius: 18,
                       background:
                         activityFilter === "rewards"
                           ? "linear-gradient(180deg, rgba(192,132,252,0.16), rgba(255,255,255,0.03))"
-                          : "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+                          : "color-mix(in srgb, var(--card2) 42%, transparent)",
                       boxShadow:
                         activityFilter === "rewards"
                           ? "0 14px 34px rgba(192,132,252,0.12)"
-                          : "0 14px 34px rgba(0,0,0,0.28)",
+                          : "0 14px 34px rgba(0,0,0,0.10)",
                       padding: 16,
-                      color: "inherit",
+                      color: "var(--text)",
                     }}
                   >
                     <div
                       style={{
                         fontSize: 12,
-                        opacity: 0.72,
-                        fontWeight: 800,
+                        color: "var(--muted)",
+                        fontWeight: 900,
                         letterSpacing: 0.3,
                       }}
                     >
@@ -1040,7 +1024,7 @@ const badges: StaffBadge[] = [
                     <div
                       style={{
                         marginTop: 8,
-                        fontSize: 28,
+                        fontSize: 30,
                         fontWeight: 950,
                         color: "#c084fc",
                         lineHeight: 1.05,
@@ -1053,11 +1037,13 @@ const badges: StaffBadge[] = [
                       style={{
                         marginTop: 8,
                         fontSize: 11,
-                        opacity: 0.58,
-                        fontWeight: 800,
+                        color: "var(--muted)",
+                        fontWeight: 900,
                       }}
                     >
-                      {activityFilter === "rewards" ? "Showing rewards" : "Click to filter"}
+                      {activityFilter === "rewards"
+                        ? "Showing rewards"
+                        : "Click to filter"}
                     </div>
                   </button>
                 </div>
@@ -1066,19 +1052,21 @@ const badges: StaffBadge[] = [
                   style={{
                     borderRadius: 18,
                     overflow: "hidden",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "rgba(0,0,0,0.16)",
+                    border: "1px solid var(--stroke)",
+                    background:
+                      "color-mix(in srgb, var(--card2) 34%, transparent)",
                   }}
                 >
                   <div
+                    className="profileActivityHeader"
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "160px 1fr 140px",
+                      gridTemplateColumns: "140px 1fr 120px",
                       padding: "12px 14px",
-                      borderBottom: "1px solid rgba(255,255,255,0.08)",
+                      borderBottom: "1px solid var(--stroke)",
                       fontSize: 12,
-                      fontWeight: 900,
-                      opacity: 0.85,
+                      fontWeight: 950,
+                      color: "var(--muted)",
                       letterSpacing: 0.3,
                     }}
                   >
@@ -1090,28 +1078,32 @@ const badges: StaffBadge[] = [
                   {filteredActivity.map((row, index) => (
                     <div
                       key={`${row.type}-${row.label}-${index}`}
+                      className="profileActivityRow"
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "160px 1fr 140px",
+                        gridTemplateColumns: "140px 1fr 120px",
                         padding: "14px",
                         borderBottom:
                           index === filteredActivity.length - 1
                             ? "none"
-                            : "1px solid rgba(255,255,255,0.06)",
+                            : "1px solid var(--stroke)",
                         alignItems: "center",
                         gap: 12,
                       }}
                     >
                       <div
                         style={{
-                          fontWeight: 900,
-                          color: row.type === "Review" ? "#67e8f9" : "#c084fc",
+                          fontWeight: 950,
+                          color:
+                            row.type === "Review" ? "#67e8f9" : "#c084fc",
                         }}
                       >
                         {row.type}
                       </div>
 
-                      <div style={{ fontSize: 13, opacity: 0.82 }}>{row.label}</div>
+                      <div style={{ fontSize: 13, color: "var(--muted)" }}>
+                        {row.label}
+                      </div>
 
                       <div style={{ textAlign: "right" }}>
                         <span
@@ -1122,9 +1114,11 @@ const badges: StaffBadge[] = [
                             padding: "6px 10px",
                             borderRadius: 999,
                             fontSize: 11,
-                            fontWeight: 900,
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.08)",
+                            fontWeight: 950,
+                            color: "var(--text)",
+                            background:
+                              "color-mix(in srgb, var(--card2) 42%, transparent)",
+                            border: "1px solid var(--stroke)",
                           }}
                         >
                           Counted
@@ -1138,17 +1132,17 @@ const badges: StaffBadge[] = [
                   style={{
                     marginTop: 14,
                     fontSize: 12,
-                    opacity: 0.62,
+                    color: "var(--muted)",
                   }}
                 >
-                  Next step: swap the placeholder activity array with your real Firestore
-                  click events for this server.
+                  Next step: swap the placeholder activity array with your real
+                  Firestore click events for this server.
                 </div>
               </div>
-            </div>
+            </section>
           </div>
         </div>
-      </div>
+      </main>
 
       <ScoreBreakdownModal
         open={scoreOpen}
@@ -1158,8 +1152,24 @@ const badges: StaffBadge[] = [
 
       <style>{`
         @media (max-width: 1100px) {
-          .server-profile-grid {
-            grid-template-columns: 1fr;
+          .serverProfileGrid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .profileStatsGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+
+        @media (max-width: 720px) {
+          .profileStatsGrid,
+          .profileEngagementGrid {
+            grid-template-columns: 1fr !important;
+          }
+
+          .profileActivityHeader,
+          .profileActivityRow {
+            grid-template-columns: 90px 1fr 84px !important;
           }
         }
       `}</style>
