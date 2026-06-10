@@ -462,7 +462,7 @@ const handleSaveHomeStore = () => {
       <main className="container">
         <div className="hero">
         <h1 className="title" style={{ fontSize: 28 }}>
-          Leaderboard V2 Coming Soon
+          Store Leaderboard
         </h1>
           <div
             style={{
@@ -519,16 +519,16 @@ const handleSaveHomeStore = () => {
                     Team {activeStore}
                   </button>
 
-                  <button 
-                    type="button"
+                  <a
+                    href="https://www.daytadna.com/league"
+                    target="_blank"
+                    rel="noreferrer"
                     role="tab"
                     aria-selected={false}
-                    aria-disabled="true"
-                    disabled
-                    title="Coming soon"
+                    title="League Preview is Live"
                     style={{
                       border: "none",
-                      cursor: "not-allowed",
+                      cursor: "pointer",
                       padding: "6px 10px",
                       borderRadius: 999,
                       fontWeight: 800,
@@ -536,17 +536,15 @@ const handleSaveHomeStore = () => {
                       letterSpacing: 0.2,
                       color: "inherit",
                       background: "transparent",
-                      opacity: 0.55, // 👈 faded again
+                      opacity: 0.95,
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
+                      textDecoration: "none",
                     }}
                   >
-                    <span aria-hidden style={{ fontSize: 12, opacity: 0.9 }}>
-                      🔒
-                    </span>
-                    League
-                  </button>
+                    League Preview is Live
+                  </a>
                 </div>
               </div>
 
