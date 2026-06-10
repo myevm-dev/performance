@@ -658,7 +658,7 @@ const padBottom = isMobileChart ? 42 : 58
                       fontWeight: 800,
                     }}
                   >
-                    View score breakdown
+                    score breakdown
                   </div>
                 </button>
 
