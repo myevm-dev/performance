@@ -16,6 +16,8 @@ import HomeStoreModal from "./components/HomeStoreModal"
 import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
 import ChangelogModal from "./components/ChangelogModal"
+import BulletinBoardPage from "./pages/BulletinBoardPage"
+import ContestPage from "./pages/ContestPage"
 
 type ServerStats = {
   id: string
@@ -659,34 +661,45 @@ function LeaderboardApp({
         <div className="card">
           <div className="cardHeader leaderboardHeader">
             <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
-              <button
-                className="leaderboardHeaderAction printBtn"
-                onClick={handlePrintLeaderboard}
-                aria-label="Print leaderboard"
-                title="Print leaderboard"
-              >
-                <span aria-hidden>⎙</span>
-                <span>Print</span>
-              </button>
+            
 
-              <button
-                className={`leaderboardHeaderAction ${isHomeStore ? "homePinnedBtn" : ""}`}
-                onClick={handlePinCurrentStore}
-                aria-label={
-                  isHomeStore
-                    ? "This leaderboard is your home store"
-                    : "Set this leaderboard as home store"
-                }
-                title={
-                  isHomeStore
-                    ? "This is your home store"
-                    : "Pin this store as your home"
-                }
-              >
-                <span aria-hidden>{isHomeStore ? "📌" : "📍"}</span>
-                <span>{isHomeStore ? "Pinned" : "Pin"}</span>
-              </button>
-            </div>
+            <button
+              className={`leaderboardHeaderAction ${isHomeStore ? "homePinnedBtn" : ""}`}
+              onClick={handlePinCurrentStore}
+              aria-label={
+                isHomeStore
+                  ? "This leaderboard is your home store"
+                  : "Set this leaderboard as home store"
+              }
+              title={
+                isHomeStore
+                  ? "This is your home store"
+                  : "Set this leaderboard as your home store"
+              }
+            >
+              <span aria-hidden>⌂</span>
+              <span>{isHomeStore ? "Home Store" : "Set Home"}</span>
+            </button>
+
+            <button
+              className="leaderboardHeaderAction bulletinBtn"
+              onClick={() => navigate("/bulletin")}
+              aria-label="Open bulletin board"
+              title="Bulletin board"
+            >
+              <span aria-hidden>▣</span>
+              <span>Bulletin</span>
+            </button>
+            <button
+              className="leaderboardHeaderAction printBtn"
+              onClick={handlePrintLeaderboard}
+              aria-label="Print leaderboard"
+              title="Print leaderboard"
+            >
+              <span aria-hidden>⎙</span>
+              <span>Print</span>
+            </button>
+          </div>
 
             <div className="leaderboardStoreSearchWrap">
               <input
@@ -732,6 +745,16 @@ function LeaderboardApp({
               >
                 <span aria-hidden>⌕</span>
                 <span>Search</span>
+              </button>
+
+              <button
+                className="leaderboardHeaderAction contestBtn"
+                onClick={() => navigate("/contest")}
+                aria-label="Open contests"
+                title="Contests"
+              >
+                <span aria-hidden>🏆</span>
+                <span>Contests</span>
               </button>
 
               <button
@@ -910,6 +933,40 @@ function LeaderboardApp({
   )
 }
 
+function BulletinBoardRoute({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
+  const activeStore = localStorage.getItem("homeStore") ?? "6909"
+
+  return (
+    <div className="appBg">
+      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
+      <BulletinBoardPage />
+    </div>
+  )
+}
+
+function ContestRoute({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
+  const activeStore = localStorage.getItem("homeStore") ?? "6909"
+
+  return (
+    <div className="appBg">
+      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
+      <ContestPage />
+    </div>
+  )
+}
+
 export default function App() {
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
 
@@ -924,9 +981,20 @@ export default function App() {
         path="/"
         element={<LeaderboardApp theme={theme} setTheme={setTheme} />}
       />
+
       <Route
         path="/profile/:staffCode"
         element={<ServerProfileRoute theme={theme} setTheme={setTheme} />}
+      />
+
+      <Route
+        path="/bulletin"
+        element={<BulletinBoardRoute theme={theme} setTheme={setTheme} />}
+      />
+
+      <Route
+        path="/contest"
+        element={<ContestRoute theme={theme} setTheme={setTheme} />}
       />
     </Routes>
   )
