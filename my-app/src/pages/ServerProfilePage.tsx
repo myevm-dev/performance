@@ -557,6 +557,7 @@ export default function ServerProfilePage({
 
             <div style={{ padding: 18 }}>
               <div
+                className="profileAvatarBox"
                 style={{
                   width: "100%",
                   aspectRatio: "1 / 1",
@@ -581,8 +582,9 @@ export default function ServerProfilePage({
                   }}
                 >
                   <div
+                    className="profileScoreText"
                     style={{
-                      fontSize: 58,
+                      fontSize: 52,
                       fontWeight: 950,
                       color: "rgba(0,0,0,0.76)",
                       letterSpacing: 1,
@@ -620,6 +622,7 @@ export default function ServerProfilePage({
                   }}
                 >
                   <div
+                    className="profileScoreText"
                     style={{
                       fontSize: 52,
                       fontWeight: 950,
@@ -1055,9 +1058,19 @@ export default function ServerProfilePage({
 
       <style>{`
         @media (max-width: 1100px) {
+          .serverProfileContainer {
+            padding: 14px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+          }
+
           .serverProfileGrid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: minmax(0, 1fr) !important;
             align-items: start !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: hidden !important;
           }
 
           .profileGuestEngagement {
@@ -1068,6 +1081,9 @@ export default function ServerProfilePage({
           .profileTopRight,
           .profileBadaCard {
             height: auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
           }
 
           .profileStatsGrid {
@@ -1076,9 +1092,48 @@ export default function ServerProfilePage({
         }
 
         @media (max-width: 720px) {
-          .profileStatsGrid,
+          .serverProfileContainer {
+            padding: 12px !important;
+            padding-bottom: 92px !important;
+            overflow-x: hidden !important;
+          }
+
+          .serverProfileGrid {
+            gap: 12px !important;
+          }
+
+          .profileSideCard {
+            border-radius: 24px !important;
+            overflow: hidden !important;
+          }
+
+          .profileSideCard > div:nth-child(2) {
+            padding: 14px !important;
+          }
+
+          .profileAvatarBox {
+            width: min(190px, 58vw) !important;
+            max-width: 190px !important;
+            margin: 0 auto !important;
+            border-radius: 20px !important;
+          }
+
+          .profileScoreText {
+            font-size: 38px !important;
+          }
+
+          .profileStatsGrid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 10px !important;
+          }
+
           .profileEngagementGrid {
             grid-template-columns: 1fr !important;
+          }
+
+          .profileBadaCard svg {
+            min-width: 0 !important;
+            min-height: 320px !important;
           }
 
           .profileActivityHeader,
@@ -1096,6 +1151,32 @@ export default function ServerProfilePage({
             text-align: left !important;
           }
         }
+
+        @media (max-width: 430px) {
+          .profileAvatarBox {
+            width: min(170px, 54vw) !important;
+            max-width: 170px !important;
+          }
+
+          .profileScoreText {
+            font-size: 36px !important;
+          }
+        }
+        @media (max-width: 430px) {
+        .profileStatsGrid {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+        }
+
+        .profileStatsGrid > div {
+          padding: 12px !important;
+          border-radius: 16px !important;
+        }
+
+        .profileStatsGrid > div > div:nth-child(2) {
+          font-size: 24px !important;
+        }
+      }
       `}</style>
     </>
   )

@@ -366,15 +366,6 @@ function ServerProfileRoute({
         setTheme={setTheme}
       />
 
-      <div className="profileBackWrap">
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="btnPrimary profileBackBtn"
-        >
-          ← Back
-        </button>
-      </div>
 
       <ServerProfilePage
       server={server}
