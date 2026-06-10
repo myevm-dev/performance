@@ -1,8 +1,22 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
+import {
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore"
+import { db } from "../lib/firebase"
+import GuestEngagementSection, {
+  type GuestActivityRow,
+} from "../components/GuestEngagementSection"
 
 type ServerProfile = {
   id: string
+  code?: string
+  staffId?: string
   name: string
   storeName?: string
   storeNumber?: string
@@ -61,28 +75,36 @@ function getBadaColor(badaPercent: number) {
   return "#ef4444"
 }
 
-function buildDummyActivity(reviews: number, rewards: number) {
-  const rows: Array<{ type: "Review" | "Rewards"; label: string }> = []
+function eventToType(event?: string): "Review" | "Rewards" {
+  if (event === "click_rewards") return "Rewards"
+  return "Review"
+}
 
-  const reviewCount = Math.min(reviews, 8)
-  const rewardCount = Math.min(rewards, 8)
+async function fetchGuestActivity(storeNumber: string, staffId: string) {
+  const clicksRef = collection(db, "stores", storeNumber, "uniqueClicks")
 
-  for (let i = 0; i < reviewCount; i++) {
-    rows.push({ type: "Review", label: `Review click ${reviewCount - i}` })
-  }
+  const q = query(
+    clicksRef,
+    where("staffId", "==", staffId),
+    orderBy("createdAt", "desc"),
+    limit(50)
+  )
 
-  for (let i = 0; i < rewardCount; i++) {
-    rows.push({ type: "Rewards", label: `Rewards click ${rewardCount - i}` })
-  }
+  const snap = await getDocs(q)
 
-  if (rows.length === 0) {
-    return [
-      { type: "Review" as const, label: "No recent click data yet" },
-      { type: "Rewards" as const, label: "No recent click data yet" },
-    ]
-  }
+  return snap.docs.map((doc) => {
+    const data = doc.data()
+    const type = eventToType(data.event)
 
-  return rows.slice(0, 12)
+    return {
+      id: doc.id,
+      type,
+      label: type === "Review" ? "Google review click" : "Rewards signup click",
+      createdAt: data.createdAt ?? null,
+      weekKey: data.weekKey,
+      weekOfYear: data.weekOfYear,
+    } satisfies GuestActivityRow
+  })
 }
 
 function buildBadaBars(
@@ -328,22 +350,24 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
     "all" | "review" | "rewards"
   >("all")
   const [badaWindow, setBadaWindow] = useState<BadaWindow>("12w")
+  const [activityRows, setActivityRows] = useState<GuestActivityRow[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
 
-  if (!server) return null
+  const serverId = server?.code ?? server?.staffId ?? server?.id ?? ""
+  const serverStoreNumber = server?.storeNumber ?? ""
 
-  const gradient = getGlassGradient(server.avatarSeed || server.id)
-
-  const badaPercent = server.badaPercent ?? 0
-  const reviews = server.reviews ?? 0
-  const rewards = server.rewards ?? 0
-  const score = server.score ?? 0
-  const sales = server.sales ?? 0
-  const promoDollars = server.promoDollars ?? 0
-  const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
+  const badaPercent = server?.badaPercent ?? 0
+  const reviews = server?.reviews ?? 0
+  const rewards = server?.rewards ?? 0
+  const score = server?.score ?? 0
+  const sales = server?.sales ?? 0
+  const promoDollars = server?.promoDollars ?? 0
+  const promoRate =
+    sales > 0 ? promoDollars / sales : server?.promoRate ?? 0
 
   const badaBars = useMemo(
-    () => buildBadaBars(server.badaWeeks),
-    [server.badaWeeks]
+    () => buildBadaBars(server?.badaWeeks),
+    [server?.badaWeeks]
   )
 
   const visibleBadaBars = useMemo(() => {
@@ -355,38 +379,6 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
   const plottedBadaBars = visibleBadaBars.filter(
     (bar): bar is { weekLabel: string; value: number } =>
       typeof bar.value === "number"
-  )
-
-  const chartMin = 50
-  const chartMax = 210
-  const chartTicks = [210, 180, 140, 100, 50]
-
-  const svgWidth = 1000
-  const svgHeight = 330
-  const padLeft = 52
-  const padRight = 24
-  const padTop = 20
-  const padBottom = 42
-  const plotWidth = svgWidth - padLeft - padRight
-  const plotHeight = svgHeight - padTop - padBottom
-
-  const getY = (value: number) => {
-    const clamped = Math.max(chartMin, Math.min(chartMax, value))
-    return padTop + ((chartMax - clamped) / (chartMax - chartMin)) * plotHeight
-  }
-
-  const getX = (index: number, total: number) => {
-    if (total <= 1) return padLeft + plotWidth / 2
-    return padLeft + (index / (total - 1)) * plotWidth
-  }
-
-  const linePoints = plottedBadaBars
-    .map((bar, index) => `${getX(index, plottedBadaBars.length)},${getY(bar.value)}`)
-    .join(" ")
-
-  const activityRows = useMemo(
-    () => buildDummyActivity(reviews, rewards),
-    [reviews, rewards]
   )
 
   const filteredActivity = useMemo(() => {
@@ -401,6 +393,77 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
     return activityRows
   }, [activityRows, activityFilter])
 
+  useEffect(() => {
+    if (!serverStoreNumber || !serverId) {
+      setActivityRows([])
+      return
+    }
+
+    let cancelled = false
+
+    async function loadActivity() {
+      setActivityLoading(true)
+
+      try {
+        const rows = await fetchGuestActivity(serverStoreNumber, serverId)
+
+        if (!cancelled) {
+          setActivityRows(rows)
+        }
+      } catch (error) {
+        console.error("Failed to load guest activity", error)
+
+        if (!cancelled) {
+          setActivityRows([])
+        }
+      } finally {
+        if (!cancelled) {
+          setActivityLoading(false)
+        }
+      }
+    }
+
+    loadActivity()
+
+    return () => {
+      cancelled = true
+    }
+  }, [serverStoreNumber, serverId])
+
+  if (!server) return null
+
+  const gradient = getGlassGradient(server.avatarSeed || server.id)
+
+  const chartMin = 50
+  const chartMax = 210
+  const chartTicks = [210, 180, 140, 100, 50]
+
+  const svgWidth = 1000
+  const svgHeight = 500
+  const padLeft = 52
+  const padRight = 24
+  const padTop = 42
+  const padBottom = 58
+  const plotWidth = svgWidth - padLeft - padRight
+  const plotHeight = svgHeight - padTop - padBottom
+
+  const getY = (value: number) => {
+    const clamped = Math.max(chartMin, Math.min(chartMax, value))
+    return padTop + ((chartMax - clamped) / (chartMax - chartMin)) * plotHeight
+  }
+
+  const getX = (index: number, total: number) => {
+    if (total <= 1) return padLeft + plotWidth / 2
+    return padLeft + (index / (total - 1)) * plotWidth
+  }
+
+  const linePoints = plottedBadaBars
+    .map(
+      (bar, index) =>
+        `${getX(index, plottedBadaBars.length)},${getY(bar.value)}`
+    )
+    .join(" ")
+
   return (
     <>
       <main className="serverProfileContainer">
@@ -408,12 +471,19 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
           className="serverProfileGrid"
           style={{
             display: "grid",
-            gridTemplateColumns: "300px minmax(0, 1fr)",
+            gridTemplateColumns: "360px minmax(0, 1fr)",
             gap: 16,
-            alignItems: "start",
+            alignItems: "stretch",
           }}
         >
-          <section className="card" style={{ marginTop: 0 }}>
+          <section
+            className="card profileSideCard"
+            style={{
+              marginTop: 0,
+              height: "100%",
+              alignSelf: "stretch",
+            }}
+          >
             <div
               style={{
                 height: 4,
@@ -589,10 +659,17 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
             </div>
           </section>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div
+            className="profileTopRight"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+              height: "100%",
+              minHeight: 0,
+            }}
+          >
             <section className="card" style={{ marginTop: 0 }}>
-
-
               <div
                 className="profileStatsGrid"
                 style={{
@@ -632,15 +709,22 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
               </div>
             </section>
 
-            <section className="card" style={{ marginTop: 0 }}>
+            <section
+              className="card profileBadaCard"
+              style={{
+                marginTop: 0,
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+              }}
+            >
               <div className="cardHeader">
                 <div>
                   <div className="cardTitle" style={{ fontSize: 18 }}>
                     Server BADA Over Time
                   </div>
-                  <div className="cardSub">
-                    Recent published BADA weeks
-                  </div>
+                  <div className="cardSub">Recent published BADA weeks</div>
                 </div>
 
                 <div
@@ -726,7 +810,14 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
                 </div>
               </div>
 
-              <div style={{ padding: 18 }}>
+              <div
+                style={{
+                  padding: 18,
+                  flex: 1,
+                  display: "flex",
+                  minHeight: 0,
+                }}
+              >
                 <div
                   style={{
                     borderRadius: 20,
@@ -735,16 +826,27 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
                       "linear-gradient(180deg, rgba(1,252,252,0.04), rgba(253,1,245,0.035)), color-mix(in srgb, var(--card2) 42%, transparent)",
                     padding: 16,
                     overflow: "hidden",
+                    flex: 1,
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
                   }}
                 >
                   {plottedBadaBars.length > 0 ? (
-                    <div style={{ width: "100%", overflowX: "auto" }}>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        overflowX: "auto",
+                      }}
+                    >
                       <svg
                         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                         style={{
                           width: "100%",
                           minWidth: 760,
-                          height: "auto",
+                          height: "100%",
+                          minHeight: 440,
                           display: "block",
                         }}
                       >
@@ -839,6 +941,7 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
                     <div
                       style={{
                         minHeight: 260,
+                        width: "100%",
                         display: "grid",
                         placeItems: "center",
                         color: "var(--muted)",
@@ -851,241 +954,16 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
                 </div>
               </div>
             </section>
-
-            <section className="card" style={{ marginTop: 0 }}>
-              <div className="cardHeader">
-                <div>
-                  <div className="cardTitle">Guest Engagement</div>
-                  <div className="cardSub">Review and Rewards activity</div>
-                </div>
-              </div>
-
-              <div style={{ padding: 18 }}>
-                <div
-                  className="profileEngagementGrid"
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 14,
-                    marginBottom: 18,
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActivityFilter((prev) =>
-                        prev === "review" ? "all" : "review"
-                      )
-                    }
-                    style={{
-                      border: "1px solid var(--stroke)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      borderRadius: 18,
-                      background:
-                        activityFilter === "review"
-                          ? "linear-gradient(180deg, rgba(103,232,249,0.16), rgba(255,255,255,0.03))"
-                          : "color-mix(in srgb, var(--card2) 42%, transparent)",
-                      boxShadow:
-                        activityFilter === "review"
-                          ? "0 14px 34px rgba(103,232,249,0.12)"
-                          : "0 14px 34px rgba(0,0,0,0.10)",
-                      padding: 16,
-                      color: "var(--text)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        fontWeight: 900,
-                        letterSpacing: 0.3,
-                      }}
-                    >
-                      Reviews
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 30,
-                        fontWeight: 950,
-                        color: "#67e8f9",
-                        lineHeight: 1.05,
-                      }}
-                    >
-                      {reviews}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 11,
-                        color: "var(--muted)",
-                        fontWeight: 900,
-                      }}
-                    >
-                      {activityFilter === "review"
-                        ? "Showing reviews"
-                        : "Click to filter"}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActivityFilter((prev) =>
-                        prev === "rewards" ? "all" : "rewards"
-                      )
-                    }
-                    style={{
-                      border: "1px solid var(--stroke)",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      borderRadius: 18,
-                      background:
-                        activityFilter === "rewards"
-                          ? "linear-gradient(180deg, rgba(192,132,252,0.16), rgba(255,255,255,0.03))"
-                          : "color-mix(in srgb, var(--card2) 42%, transparent)",
-                      boxShadow:
-                        activityFilter === "rewards"
-                          ? "0 14px 34px rgba(192,132,252,0.12)"
-                          : "0 14px 34px rgba(0,0,0,0.10)",
-                      padding: 16,
-                      color: "var(--text)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "var(--muted)",
-                        fontWeight: 900,
-                        letterSpacing: 0.3,
-                      }}
-                    >
-                      Rewards
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 30,
-                        fontWeight: 950,
-                        color: "#c084fc",
-                        lineHeight: 1.05,
-                      }}
-                    >
-                      {rewards}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: 8,
-                        fontSize: 11,
-                        color: "var(--muted)",
-                        fontWeight: 900,
-                      }}
-                    >
-                      {activityFilter === "rewards"
-                        ? "Showing rewards"
-                        : "Click to filter"}
-                    </div>
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    borderRadius: 18,
-                    overflow: "hidden",
-                    border: "1px solid var(--stroke)",
-                    background:
-                      "color-mix(in srgb, var(--card2) 34%, transparent)",
-                  }}
-                >
-                  <div
-                    className="profileActivityHeader"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "140px 1fr 120px",
-                      padding: "12px 14px",
-                      borderBottom: "1px solid var(--stroke)",
-                      fontSize: 12,
-                      fontWeight: 950,
-                      color: "var(--muted)",
-                      letterSpacing: 0.3,
-                    }}
-                  >
-                    <div>Type</div>
-                    <div>Description</div>
-                    <div style={{ textAlign: "right" }}>Status</div>
-                  </div>
-
-                  {filteredActivity.map((row, index) => (
-                    <div
-                      key={`${row.type}-${row.label}-${index}`}
-                      className="profileActivityRow"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "140px 1fr 120px",
-                        padding: "14px",
-                        borderBottom:
-                          index === filteredActivity.length - 1
-                            ? "none"
-                            : "1px solid var(--stroke)",
-                        alignItems: "center",
-                        gap: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 950,
-                          color:
-                            row.type === "Review" ? "#67e8f9" : "#c084fc",
-                        }}
-                      >
-                        {row.type}
-                      </div>
-
-                      <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                        {row.label}
-                      </div>
-
-                      <div style={{ textAlign: "right" }}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: "6px 10px",
-                            borderRadius: 999,
-                            fontSize: 11,
-                            fontWeight: 950,
-                            color: "var(--text)",
-                            background:
-                              "color-mix(in srgb, var(--card2) 42%, transparent)",
-                            border: "1px solid var(--stroke)",
-                          }}
-                        >
-                          Counted
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: 12,
-                    color: "var(--muted)",
-                  }}
-                >
-                  Next step: swap the placeholder activity array with your real
-                  Firestore click events for this server.
-                </div>
-              </div>
-            </section>
           </div>
+
+          <GuestEngagementSection
+            reviews={reviews}
+            rewards={rewards}
+            activityFilter={activityFilter}
+            setActivityFilter={setActivityFilter}
+            filteredActivity={filteredActivity}
+            activityLoading={activityLoading}
+          />
         </div>
       </main>
 
@@ -1099,6 +977,17 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
         @media (max-width: 1100px) {
           .serverProfileGrid {
             grid-template-columns: 1fr !important;
+            align-items: start !important;
+          }
+
+          .profileGuestEngagement {
+            grid-column: auto !important;
+          }
+
+          .profileSideCard,
+          .profileTopRight,
+          .profileBadaCard {
+            height: auto !important;
           }
 
           .profileStatsGrid {
@@ -1114,7 +1003,17 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
 
           .profileActivityHeader,
           .profileActivityRow {
-            grid-template-columns: 90px 1fr 84px !important;
+            grid-template-columns: 90px 1fr !important;
+          }
+
+          .profileActivityHeader > div:nth-child(3),
+          .profileActivityHeader > div:nth-child(4),
+          .profileActivityHeader > div:nth-child(5),
+          .profileActivityRow > div:nth-child(3),
+          .profileActivityRow > div:nth-child(4),
+          .profileActivityRow > div:nth-child(5) {
+            grid-column: 1 / -1;
+            text-align: left !important;
           }
         }
       `}</style>

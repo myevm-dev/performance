@@ -222,8 +222,8 @@ export const stores: Store[] = [
     storeNumber: "6909",
     name: "El Paso - Dyer",
     email: "dennys6909@wksusa.com",
-    districtId: "1C",
-    regionId: regionFromDistrict("1C"),
+    districtId: "1D",
+    regionId: regionFromDistrict("1D"),
     placeId: "ChIJOWUBTT5R54YRiCgS4uhy_PU",
   },
     {
@@ -332,8 +332,9 @@ export const stores: Store[] = [
     storeNumber: "6236",
     name: "Carlsbad - Pierce",
     email: "dennys6236@wksusa.com",
-    districtId: "1E",
-    regionId: regionFromDistrict("1E"),
+    districtId: "1C",
+    regionId: regionFromDistrict("1C"),
+    placeId: "ChIJoYmRTtJ544YRDKrRNcFUTZ4",
   },
   {
     storeNumber: "7723",
@@ -371,8 +372,8 @@ export const stores: Store[] = [
     storeNumber: "8741",
     name: "Hobbs - Lovington",
     email: "dennys8741@wksusa.com",
-    districtId: "1E",
-    regionId: regionFromDistrict("1E"),
+    districtId: "1C",
+    regionId: regionFromDistrict("1C"),
     placeId: "ChIJD3pN7h7A_IYRckl7nZ-jHWE",
   },
   {
