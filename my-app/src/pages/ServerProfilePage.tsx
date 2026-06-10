@@ -12,6 +12,8 @@ import { db } from "../lib/firebase"
 import GuestEngagementSection, {
   type GuestActivityRow,
 } from "../components/GuestEngagementSection"
+import { stores } from "../data/stores"
+
 
 type ServerProfile = {
   id: string
@@ -36,9 +38,9 @@ type ServerProfile = {
 
 type ServerProfilePageProps = {
   server: ServerProfile | null
+  servers: ServerProfile[]
   onBack: () => void
 }
-
 type BadaWindow = "all" | "12w" | "4w"
 
 function formatMoney(value?: number) {
@@ -46,6 +48,29 @@ function formatMoney(value?: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
+}
+
+function getRankLabel(rank: number | null, total: number) {
+  if (!rank || total <= 0) return "Soon"
+  return `#${rank} of ${total}`
+}
+
+function rankServersByExistingScore(
+  servers: ServerProfile[],
+  currentServerId: string,
+  filterFn: (server: ServerProfile) => boolean
+) {
+  const ranked = servers
+    .filter(filterFn)
+    .filter((server) => typeof server.score === "number")
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+
+  const index = ranked.findIndex((server) => server.id === currentServerId)
+
+  return {
+    rank: index >= 0 ? index + 1 : null,
+    total: ranked.length,
+  }
 }
 
 function formatPercent(value?: number, digits = 1) {
@@ -344,7 +369,10 @@ function ScoreBreakdownModal({
   )
 }
 
-export default function ServerProfilePage({ server }: ServerProfilePageProps) {
+export default function ServerProfilePage({
+  server,
+  servers,
+}: ServerProfilePageProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
   const [activityFilter, setActivityFilter] = useState<
     "all" | "review" | "rewards"
@@ -355,6 +383,42 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
 
   const serverId = server?.code ?? server?.staffId ?? server?.id ?? ""
   const serverStoreNumber = server?.storeNumber ?? ""
+  const currentStore = stores.find(
+  (store) => store.storeNumber === server?.storeNumber
+)
+
+  const currentDistrictId = currentStore?.districtId
+  const currentRegionId = currentStore?.regionId
+
+  const storeRank = rankServersByExistingScore(
+    servers,
+    serverId,
+    (item) => item.storeNumber === server?.storeNumber
+  )
+
+  const districtRank = rankServersByExistingScore(servers, serverId, (item) => {
+    const itemStore = stores.find(
+      (store) => store.storeNumber === item.storeNumber
+    )
+
+    return Boolean(
+      currentDistrictId && itemStore?.districtId === currentDistrictId
+    )
+  })
+
+  const regionRank = rankServersByExistingScore(servers, serverId, (item) => {
+    const itemStore = stores.find(
+      (store) => store.storeNumber === item.storeNumber
+    )
+
+    return Boolean(currentRegionId && itemStore?.regionId === currentRegionId)
+  })
+
+  const companyRank = rankServersByExistingScore(
+    servers,
+    serverId,
+    () => true
+  )
 
   const badaPercent = server?.badaPercent ?? 0
   const reviews = server?.reviews ?? 0
@@ -610,10 +674,26 @@ export default function ServerProfilePage({ server }: ServerProfilePageProps) {
                 }}
               >
                 {[
-                  ["Store Rank", "Soon", "#67e8f9"],
-                  ["District Rank", "Soon", "#c084fc"],
-                  ["Region Rank", "Soon", "#fb7185"],
-                  ["Company Rank", "Soon", "#facc15"],
+                  [
+                    "Store Rank",
+                    getRankLabel(storeRank.rank, storeRank.total),
+                    "#67e8f9",
+                  ],
+                  [
+                    "District Rank",
+                    getRankLabel(districtRank.rank, districtRank.total),
+                    "#c084fc",
+                  ],
+                  [
+                    "Region Rank",
+                    getRankLabel(regionRank.rank, regionRank.total),
+                    "#fb7185",
+                  ],
+                  [
+                    "Company Rank",
+                    getRankLabel(companyRank.rank, companyRank.total),
+                    "#facc15",
+                  ],
                 ].map(([label, value, color]) => (
                   <div
                     key={label}

@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
-import Lottie from "lottie-react"
-import dnaAnimation from "../lottie/DNA.json"
+
+import { useLocation } from "react-router-dom"
 
 type ThemeMode = "light" | "dark"
 
@@ -8,6 +8,16 @@ type NavbarProps = {
   activeStore: string
   theme: ThemeMode
   setTheme: (theme: ThemeMode) => void
+}
+
+type NavItemProps = {
+  href: string
+  label: string
+  colorClass: string
+  activeColorClass: string
+  isActive: boolean
+  external?: boolean
+  title?: string
 }
 
 function ThemeToggle({
@@ -35,7 +45,75 @@ function ThemeToggle({
   )
 }
 
+function DesktopNavItem({
+  href,
+  label,
+  colorClass,
+  activeColorClass,
+  isActive,
+  external = false,
+  title,
+}: NavItemProps) {
+  return (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+      title={title || label}
+      className={`group relative inline-flex min-h-8 items-center justify-center whitespace-nowrap px-1 text-sm font-black no-underline outline-none transition hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40 ${
+        isActive ? colorClass : "text-[var(--muted)] hover:text-[var(--text)]"
+      }`}
+    >
+      <span
+        className={`absolute -top-2 left-1/2 h-1 w-full max-w-36 -translate-x-1/2 rounded-b-full transition ${
+          isActive ? `scale-x-100 ${activeColorClass}` : `scale-x-0 ${activeColorClass} group-hover:scale-x-100`
+        }`}
+      />
+      {label}
+    </a>
+  )
+}
+
+function MobileNavItem({
+  href,
+  label,
+  icon,
+  colorClass,
+  activeColorClass,
+  isActive,
+  external = false,
+}: NavItemProps & {
+  icon: string
+}) {
+  return (
+    <a
+      href={href}
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
+      className={`relative flex min-h-12 flex-col items-center justify-center rounded-2xl border px-2 text-xs font-black no-underline transition ${
+        isActive
+          ? `border-transparent bg-[color-mix(in_srgb,var(--card2)_75%,transparent)] ${colorClass}`
+          : "border-[var(--stroke2)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] text-[var(--text)]"
+      }`}
+    >
+      <span
+        className={`absolute left-3 right-3 top-0 h-1 rounded-b-full ${
+          isActive ? activeColorClass : "bg-transparent"
+        }`}
+      />
+      <span className="text-base leading-none">{icon}</span>
+      <span className="mt-1">{label}</span>
+    </a>
+  )
+}
+
 export default function Navbar({ activeStore, theme, setTheme }: NavbarProps) {
+  const location = useLocation()
+
+  const isLeaderboard = location.pathname === "/"
+  const isTeam = location.pathname.startsWith("/team")
+  const isLeague = location.pathname.startsWith("/league")
+
   return (
     <>
       <header className="w-full">
@@ -44,11 +122,7 @@ export default function Navbar({ activeStore, theme, setTheme }: NavbarProps) {
             <div
               aria-hidden="true"
               className="flex h-[44px] w-[58px] shrink-0 items-center justify-center overflow-visible max-[760px]:hidden"
-            >
-              <div className="h-[92px] w-[92px] scale-[1.08] [&_svg]:overflow-visible">
-                <Lottie animationData={dnaAnimation} loop autoplay />
-              </div>
-            </div>
+            />
 
             <div className="min-w-0">
               <div className="whitespace-nowrap text-[22px] font-black leading-none tracking-[-0.04em] text-[var(--text)] max-[760px]:text-[23px]">
@@ -61,27 +135,34 @@ export default function Navbar({ activeStore, theme, setTheme }: NavbarProps) {
             aria-label="Desktop navigation links"
             className="flex items-center justify-center gap-8 justify-self-center max-[760px]:hidden"
           >
-            <a
-              href={`https://www.daytadna.com/team/${activeStore}`}
-              target="_blank"
-              rel="noreferrer"
-              title={`Open Team ${activeStore}`}
-              className="group relative inline-flex min-h-8 items-center justify-center whitespace-nowrap px-1 text-sm font-black text-[var(--muted)] no-underline outline-none transition hover:-translate-y-px hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40"
-            >
-              <span className="absolute -top-2 left-1/2 h-1 w-full max-w-36 -translate-x-1/2 scale-x-0 rounded-b-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition group-hover:scale-x-100" />
-              View Team {activeStore}
-            </a>
+            <DesktopNavItem
+              href="/"
+              label="Leaderboard"
+              title="View leaderboard"
+              isActive={isLeaderboard}
+              colorClass="text-cyan-500"
+              activeColorClass="bg-gradient-to-r from-cyan-400 to-sky-500"
+            />
 
-            <a
+            <DesktopNavItem
+              href={`https://www.daytadna.com/team/${activeStore}`}
+              label="View Team Page"
+              title={`Open Team ${activeStore}`}
+              external
+              isActive={isTeam}
+              colorClass="text-emerald-500"
+              activeColorClass="bg-gradient-to-r from-emerald-500 to-emerald-400"
+            />
+
+            <DesktopNavItem
               href="https://www.daytadna.com/league"
-              target="_blank"
-              rel="noreferrer"
+              label="League Preview"
               title="League Preview is Live"
-              className="group relative inline-flex min-h-8 items-center justify-center whitespace-nowrap px-1 text-sm font-black text-[var(--muted)] no-underline outline-none transition hover:-translate-y-px hover:text-[var(--text)] focus:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/40"
-            >
-              <span className="absolute -top-2 left-1/2 h-1 w-full max-w-36 -translate-x-1/2 scale-x-0 rounded-b-full bg-gradient-to-r from-[var(--a1)] to-pink-500 transition group-hover:scale-x-100" />
-              League Preview
-            </a>
+              external
+              isActive={isLeague}
+              colorClass="text-fuchsia-500"
+              activeColorClass="bg-gradient-to-r from-fuchsia-500 to-pink-500"
+            />
           </nav>
 
           <div className="flex items-center justify-end justify-self-end">
@@ -97,33 +178,34 @@ export default function Navbar({ activeStore, theme, setTheme }: NavbarProps) {
         className="fixed inset-x-0 bottom-0 z-40 hidden border-t border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_88%,transparent)] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 backdrop-blur-xl max-[760px]:block"
       >
         <div className="mx-auto grid max-w-md grid-cols-3 gap-2">
-          <a
+          <MobileNavItem
             href="/"
-            className="flex min-h-12 flex-col items-center justify-center rounded-2xl border border-[var(--stroke2)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-2 text-xs font-black text-[var(--text)] no-underline"
-          >
-            <span className="text-base leading-none">⌂</span>
-            <span className="mt-1">Home</span>
-          </a>
-            <a
-            href="https://www.daytadna.com/league"
-            target="_blank"
-            rel="noreferrer"
-            className="flex min-h-12 flex-col items-center justify-center rounded-2xl border border-[var(--stroke2)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-2 text-xs font-black text-[var(--text)] no-underline"
-          >
-            <span className="text-base leading-none">⚔</span>
-            <span className="mt-1">League</span>
-          </a>
-          <a
-            href={`https://www.daytadna.com/team/${activeStore}`}
-            target="_blank"
-            rel="noreferrer"
-            className="flex min-h-12 flex-col items-center justify-center rounded-2xl border border-[var(--stroke2)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-2 text-xs font-black text-[var(--text)] no-underline"
-          >
-            <span className="text-base leading-none">👥</span>
-            <span className="mt-1">Team</span>
-          </a>
+            label="Leaderboard"
+            icon="🏆"
+            isActive={isLeaderboard}
+            colorClass="text-cyan-500"
+            activeColorClass="bg-gradient-to-r from-cyan-400 to-sky-500"
+          />
 
-          
+          <MobileNavItem
+            href={`https://www.daytadna.com/team/${activeStore}`}
+            label="Team"
+            icon="👥"
+            external
+            isActive={isTeam}
+            colorClass="text-emerald-500"
+            activeColorClass="bg-gradient-to-r from-emerald-500 to-emerald-400"
+          />
+
+          <MobileNavItem
+            href="https://www.daytadna.com/league"
+            label="League"
+            icon="⚔"
+            external
+            isActive={isLeague}
+            colorClass="text-fuchsia-500"
+            activeColorClass="bg-gradient-to-r from-fuchsia-500 to-pink-500"
+          />
         </div>
       </nav>
     </>

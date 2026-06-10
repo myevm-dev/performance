@@ -50,6 +50,117 @@ function getPromoPenaltyColor(promoRate: number) {
   return "#b91c1c"
 }
 
+type ProfileRankServer = ServerStats & {
+  storeNumber: string
+  storeName: string
+  score: number
+  promoRate: number
+  avatarSeed: string
+}
+
+async function loadRankServersForStore(storeNumber: string) {
+  const storeName =
+    localStores.find((store) => store.storeNumber === storeNumber)?.name ??
+    `Store ${storeNumber}`
+
+  const counts = await fetchStaffCountsLast21Days(storeNumber)
+
+  const staffSnap = await getDocs(
+    query(collection(db, "staffUsers"), where("storeNumber", "==", storeNumber))
+  )
+
+  const liveStaff = staffSnap.docs.map((docSnap) => {
+    const data = docSnap.data() as {
+      code?: string
+      name?: string
+      legacyid?: string | null
+    }
+
+    return {
+      code: String(data.code ?? docSnap.id),
+      name: data.name ?? "Unnamed",
+      legacyid: data.legacyid ?? null,
+    }
+  })
+
+  const badaSnap = await getDocs(
+    query(
+      collection(db, "stores", storeNumber, "badaPublishedWeeks"),
+      orderBy("weekStart", "desc"),
+      limit(3)
+    )
+  )
+
+  const badaAgg = new Map<
+    string,
+    { badaSum: number; count: number; sales: number; promos: number }
+  >()
+
+  badaSnap.docs.forEach((docSnap) => {
+    const data = docSnap.data() as {
+      rows?: Array<{
+        code?: string
+        sales?: number
+        badaPercent?: number
+        promosVoidsSum?: number
+      }>
+    }
+
+    ;(data.rows ?? []).forEach((row) => {
+      if (!row.code) return
+
+      const key = String(row.code)
+
+      const existing = badaAgg.get(key) ?? {
+        badaSum: 0,
+        count: 0,
+        sales: 0,
+        promos: 0,
+      }
+
+      existing.badaSum += Number(row.badaPercent ?? 0)
+      existing.count += 1
+      existing.sales += Number(row.sales ?? 0)
+      existing.promos += Number(row.promosVoidsSum ?? 0)
+
+      badaAgg.set(key, existing)
+    })
+  })
+
+  return liveStaff.map((staff) => {
+    const bada = badaAgg.get(staff.code)
+
+    const directCounts = counts[staff.code] ?? { reviews: 0, rewards: 0 }
+    const legacyCounts = staff.legacyid
+      ? counts[staff.legacyid] ?? { reviews: 0, rewards: 0 }
+      : { reviews: 0, rewards: 0 }
+
+    const row = {
+      id: staff.code,
+      code: staff.code,
+      legacyid: staff.legacyid,
+      name: staff.name,
+      storeNumber,
+      storeName,
+      badaPercent: bada && bada.count > 0 ? bada.badaSum / bada.count : 0,
+      sales: bada?.sales ?? 0,
+      promoDollars: bada?.promos ?? 0,
+      reviews: directCounts.reviews + legacyCounts.reviews,
+      rewards: directCounts.rewards + legacyCounts.rewards,
+      avatarSeed: staff.code,
+    }
+
+    const score = calculateScore(row)
+    const promoRate = row.sales > 0 ? row.promoDollars / row.sales : 0
+
+    return {
+      ...row,
+      score,
+      promoRate,
+    } satisfies ProfileRankServer
+  })
+}
+
 function ServerProfileRoute({
   theme,
   setTheme,
@@ -61,6 +172,7 @@ function ServerProfileRoute({
   const navigate = useNavigate()
 
   const [server, setServer] = useState<any | null>(null)
+  const [profileServers, setProfileServers] = useState<ProfileRankServer[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -197,6 +309,31 @@ function ServerProfileRoute({
           avatarSeed: String(staffData.code ?? staffDoc.id),
         }
 
+        const currentStoreMeta = localStores.find(
+          (store) => store.storeNumber === storeNumber
+        )
+
+        const storeNumbersToRank = currentStoreMeta
+          ? localStores
+              .filter((store) => store.regionId === currentStoreMeta.regionId)
+              .map((store) => store.storeNumber)
+          : [storeNumber]
+
+        const rankRowsNested = await Promise.all(
+          storeNumbersToRank.map((storeNumber) =>
+            loadRankServersForStore(storeNumber).catch((error) => {
+              console.warn("Failed to load rank rows for store", storeNumber, error)
+              return []
+            })
+          )
+        )
+
+        const rankRows = rankRowsNested.flat()
+
+        if (alive) {
+          setProfileServers(rankRows)
+        }
+
         if (alive) setServer(profileServer)
       } catch (error) {
         console.error("Failed to load public server profile:", error)
@@ -239,7 +376,11 @@ function ServerProfileRoute({
         </button>
       </div>
 
-      <ServerProfilePage server={server} onBack={() => navigate("/")} />
+      <ServerProfilePage
+      server={server}
+      servers={profileServers.length > 0 ? profileServers : [server]}
+      onBack={() => navigate("/")}
+    />
     </div>
   )
 }
