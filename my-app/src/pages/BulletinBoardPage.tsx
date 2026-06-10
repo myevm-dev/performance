@@ -15,38 +15,7 @@ type BulletinPost = {
   body: string
 }
 
-const mockPosts: BulletinPost[] = [
-  {
-    id: "1",
-    title: "Preseason contests are coming soon",
-    category: "Contest",
-    importance: "High",
-    dateLabel: "Today",
-    audience: "All Stores",
-    status: "Pinned",
-    body: "Managers will be able to create store contests around reviews, rewards, BADA, score, and incidence metrics.",
-  },
-  {
-    id: "2",
-    title: "Business weeks start Thursday",
-    category: "Reminder",
-    importance: "Medium",
-    dateLabel: "This Week",
-    audience: "Managers",
-    status: "Active",
-    body: "Contest start dates follow the Dayta DNA business calendar, running Thursday through Wednesday.",
-  },
-  {
-    id: "3",
-    title: "Top performers will be featured here",
-    category: "Recognition",
-    importance: "Low",
-    dateLabel: "Coming Soon",
-    audience: "Store Teams",
-    status: "Draft",
-    body: "Recognition posts can highlight servers, stores, districts, or contest winners.",
-  },
-]
+const mockPosts: BulletinPost[] = []
 
 function getCategoryBadge(category: BulletinPost["category"]) {
   if (category === "Contest") {
@@ -122,8 +91,6 @@ export default function BulletinBoardPage() {
       <div className="card">
         <div className="cardHeader leaderboardHeader">
           <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
-
-
             <select
               className="leaderboardHeaderAction"
               value={importanceFilter}
@@ -221,13 +188,14 @@ export default function BulletinBoardPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: 40 }}>
-                    <div style={{ fontWeight: 900, fontSize: 18 }}>
-                      No bulletin posts found.
+                  <td colSpan={6} style={{ textAlign: "center", padding: 56 }}>
+                    <div style={{ fontWeight: 900, fontSize: 20 }}>
+                      No posts yet.
                     </div>
 
                     <div className="meta" style={{ marginTop: 8 }}>
-                      Try changing the search or importance filter.
+                      Updates, reminders, recognition, and contest notices will
+                      appear here once posted.
                     </div>
                   </td>
                 </tr>
