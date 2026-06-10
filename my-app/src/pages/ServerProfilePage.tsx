@@ -380,7 +380,7 @@ export default function ServerProfilePage({
   const [badaWindow, setBadaWindow] = useState<BadaWindow>("12w")
   const [activityRows, setActivityRows] = useState<GuestActivityRow[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
-
+  const [isMobileChart, setIsMobileChart] = useState(false)
   const serverId = server?.code ?? server?.staffId ?? server?.id ?? ""
   const serverStoreNumber = server?.storeNumber ?? ""
   const currentStore = stores.find(
@@ -494,20 +494,35 @@ export default function ServerProfilePage({
     }
   }, [serverStoreNumber, serverId])
 
+  useEffect(() => {
+  const checkMobile = () => {
+    setIsMobileChart(window.innerWidth <= 720)
+  }
+
+  checkMobile()
+  window.addEventListener("resize", checkMobile)
+
+  return () => {
+    window.removeEventListener("resize", checkMobile)
+  }
+}, [])
+
   if (!server) return null
 
   const gradient = getGlassGradient(server.avatarSeed || server.id)
 
-  const chartMin = 50
-  const chartMax = 210
-  const chartTicks = [210, 180, 140, 100, 50]
+  const chartMin = isMobileChart ? 128 : 50
+  const chartMax = isMobileChart ? 148 : 210
+  const chartTicks = isMobileChart
+    ? [148, 144, 140, 136, 132, 128]
+    : [200, 180, 160, 140, 120, 100]
 
   const svgWidth = 1000
-  const svgHeight = 500
-  const padLeft = 52
-  const padRight = 24
-  const padTop = 42
-  const padBottom = 58
+const svgHeight = isMobileChart ? 330 : 500
+const padLeft = isMobileChart ? 58 : 52
+const padRight = isMobileChart ? 18 : 24
+const padTop = isMobileChart ? 22 : 42
+const padBottom = isMobileChart ? 42 : 58
   const plotWidth = svgWidth - padLeft - padRight
   const plotHeight = svgHeight - padTop - padBottom
 
@@ -670,75 +685,156 @@ export default function ServerProfilePage({
               </div>
 
               <div
-                style={{
-                  marginTop: 18,
-                  display: "grid",
-                  gap: 10,
-                }}
-              >
-                {[
-                  [
-                    "Store Rank",
-                    getRankLabel(storeRank.rank, storeRank.total),
-                    "#67e8f9",
-                  ],
-                  [
-                    "District Rank",
-                    getRankLabel(districtRank.rank, districtRank.total),
-                    "#c084fc",
-                  ],
-                  [
-                    "Region Rank",
-                    getRankLabel(regionRank.rank, regionRank.total),
-                    "#fb7185",
-                  ],
-                  [
-                    "Company Rank",
-                    getRankLabel(companyRank.rank, companyRank.total),
-                    "#facc15",
-                  ],
-                ].map(([label, value, color]) => (
-                  <div
-                    key={label}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "10px 12px",
-                      borderRadius: 14,
-                      background:
-                        "color-mix(in srgb, var(--card2) 38%, transparent)",
-                      border: "1px solid var(--stroke)",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 13,
-                        color: "var(--muted)",
-                        fontWeight: 900,
-                      }}
-                    >
-                      {label}
-                    </span>
+  className="profileRankPanel"
+  style={{
+    marginTop: 18,
+    borderRadius: 18,
+    border: "1px solid var(--stroke)",
+    background: "color-mix(in srgb, var(--card2) 34%, transparent)",
+    padding: 12,
+  }}
+>
 
-                    <span
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 950,
-                        color,
-                        background:
-                          "color-mix(in srgb, var(--card2) 42%, transparent)",
-                        padding: "4px 10px",
-                        borderRadius: 999,
-                        border: "1px solid var(--stroke)",
-                      }}
-                    >
-                      {value}
-                    </span>
-                  </div>
-                ))}
+
+  <div
+    className="profileRankDesktopList"
+    style={{
+      display: "grid",
+      gap: 10,
+    }}
+  >
+    {[
+      {
+        label: "Store Rank",
+        value: getRankLabel(storeRank.rank, storeRank.total),
+        color: "#67e8f9",
+      },
+      {
+        label: "District Rank",
+        value: getRankLabel(districtRank.rank, districtRank.total),
+        color: "#c084fc",
+      },
+      {
+        label: "Region Rank",
+        value: getRankLabel(regionRank.rank, regionRank.total),
+        color: "#fb7185",
+      },
+      {
+        label: "Company Rank",
+        value: getRankLabel(companyRank.rank, companyRank.total),
+        color: "#facc15",
+      },
+    ].map((item) => (
+      <div
+        key={item.label}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          alignItems: "center",
+          padding: "10px 12px",
+          borderRadius: 14,
+          background: "color-mix(in srgb, var(--card2) 38%, transparent)",
+          border: "1px solid var(--stroke)",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 13,
+            color: "var(--muted)",
+            fontWeight: 900,
+          }}
+        >
+          {item.label}
+        </span>
+
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 950,
+            color: item.color,
+            background: "color-mix(in srgb, var(--card2) 42%, transparent)",
+            padding: "4px 10px",
+            borderRadius: 999,
+            border: "1px solid var(--stroke)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {item.value}
+        </span>
+      </div>
+    ))}
+  </div>
+
+  <div
+    className="profileRankMiniGrid"
+    style={{
+      display: "none",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: 8,
+    }}
+  >
+    {[
+      {
+        label: "Store",
+        rank: storeRank.rank,
+        color: "#67e8f9",
+      },
+      {
+        label: "District",
+        rank: districtRank.rank,
+        color: "#c084fc",
+      },
+      {
+        label: "Region",
+        rank: regionRank.rank,
+        color: "#fb7185",
+      },
+      {
+        label: "Company",
+        rank: companyRank.rank,
+        color: "#facc15",
+      },
+    ].map((item) => (
+      <div
+        key={item.label}
+        className="profileRankMiniCard"
+        style={{
+          minWidth: 0,
+          borderRadius: 14,
+          border: "1px solid var(--stroke)",
+          background: "color-mix(in srgb, var(--card2) 46%, transparent)",
+          padding: "10px 6px",
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            color: "var(--muted)",
+            fontWeight: 950,
+            lineHeight: 1.1,
+          }}
+        >
+          {item.label}
+        </div>
+
+        <div
+          style={{
+            marginTop: 7,
+            fontSize: 16,
+            color: item.color,
+            fontWeight: 950,
+            lineHeight: 1,
+          }}
+        >
+          {item.rank ? `#${item.rank}` : "Soon"}
+        </div>
+      </div>
+    ))}
+
               </div>
+            </div>
             </div>
           </section>
 
@@ -796,18 +892,45 @@ export default function ServerProfilePage({
               className="card profileBadaCard"
               style={{
                 marginTop: 0,
-                flex: 1,
+                flex: isMobileChart ? "none" : 1,
                 display: "flex",
                 flexDirection: "column",
                 minHeight: 0,
               }}
             >
               <div className="cardHeader">
-                <div>
-                  <div className="cardTitle" style={{ fontSize: 18 }}>
-                    Server BADA Over Time
+                <div
+                  className="profileBadaTitleRow"
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    width: "100%",
+                  }}
+                >
+                  <div>
+                    <div className="cardTitle" style={{ fontSize: 18 }}>
+                      BADA Over Time
+                    </div>
+                    <div className="cardSub">Recent published BADA weeks</div>
                   </div>
-                  <div className="cardSub">Recent published BADA weeks</div>
+
+                  <div
+                    className="profileBadaAverageBadge"
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 999,
+                      border: "1px solid var(--stroke)",
+                      background: "color-mix(in srgb, var(--card2) 62%, transparent)",
+                      fontSize: 14,
+                      fontWeight: 950,
+                      color: getBadaColor(badaPercent),
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Average: {formatPercent(badaPercent)}
+                  </div>
                 </div>
 
                 <div
@@ -875,25 +998,12 @@ export default function ServerProfilePage({
                     })}
                   </div>
 
-                  <div
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 999,
-                      border: "1px solid var(--stroke)",
-                      background:
-                        "color-mix(in srgb, var(--card2) 62%, transparent)",
-                      fontSize: 14,
-                      fontWeight: 950,
-                      color: getBadaColor(badaPercent),
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Average: {formatPercent(badaPercent)}
-                  </div>
+                  
                 </div>
               </div>
 
               <div
+                className="profileBadaChartBody"
                 style={{
                   padding: 18,
                   flex: 1,
@@ -902,6 +1012,7 @@ export default function ServerProfilePage({
                 }}
               >
                 <div
+                  className="profileBadaChartBox"
                   style={{
                     borderRadius: 20,
                     border: "1px solid var(--stroke)",
@@ -917,21 +1028,23 @@ export default function ServerProfilePage({
                 >
                   {plottedBadaBars.length > 0 ? (
                     <div
+                      className="profileBadaSvgWrap"
                       style={{
                         width: "100%",
                         height: "100%",
                         overflowX: "auto",
                       }}
                     >
-                      <svg
+                     <svg
                         viewBox={`0 0 ${svgWidth} ${svgHeight}`}
                         style={{
                           width: "100%",
-                          minWidth: 760,
-                          height: "100%",
-                          minHeight: 440,
+                          minWidth: isMobileChart ? 0 : 760,
+                          height: "auto",
                           display: "block",
                         }}
+                        shapeRendering="geometricPrecision"
+                        textRendering="geometricPrecision"
                       >
                         {chartTicks.map((tick) => {
                           const y = getY(tick)
@@ -951,6 +1064,7 @@ export default function ServerProfilePage({
                                 strokeWidth={tick === 140 ? 2.2 : 1}
                                 strokeDasharray={tick === 140 ? "0" : "4 6"}
                               />
+
                               <text
                                 x={4}
                                 y={y + 4}
@@ -1005,6 +1119,7 @@ export default function ServerProfilePage({
                                 stroke="#ffffff"
                                 strokeWidth="2"
                               />
+
                               <text
                                 x={x}
                                 y={svgHeight - 10}
@@ -1023,7 +1138,7 @@ export default function ServerProfilePage({
                   ) : (
                     <div
                       style={{
-                        minHeight: 260,
+                        minHeight: isMobileChart ? 180 : 260,
                         width: "100%",
                         display: "grid",
                         placeItems: "center",
@@ -1056,128 +1171,330 @@ export default function ServerProfilePage({
         server={server}
       />
 
-      <style>{`
-        @media (max-width: 1100px) {
-          .serverProfileContainer {
-            padding: 14px !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            overflow-x: hidden !important;
-          }
+<style>{`
+  @media (max-width: 1100px) {
+    .serverProfileContainer {
+      padding: 14px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
 
-          .serverProfileGrid {
-            grid-template-columns: minmax(0, 1fr) !important;
-            align-items: start !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            overflow-x: hidden !important;
-          }
+    .serverProfileGrid {
+      grid-template-columns: minmax(0, 1fr) !important;
+      align-items: start !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: hidden !important;
+    }
 
-          .profileGuestEngagement {
-            grid-column: auto !important;
-          }
+    .profileGuestEngagement {
+      grid-column: auto !important;
+    }
 
-          .profileSideCard,
-          .profileTopRight,
-          .profileBadaCard {
-            height: auto !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            min-width: 0 !important;
-          }
+    .profileSideCard,
+    .profileTopRight,
+    .profileBadaCard {
+      height: auto !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+    }
 
-          .profileStatsGrid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          }
-        }
+    .profileStatsGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
 
-        @media (max-width: 720px) {
-          .serverProfileContainer {
-            padding: 12px !important;
-            padding-bottom: 92px !important;
-            overflow-x: hidden !important;
-          }
+  @media (max-width: 720px) {
+    .serverProfileContainer {
+      padding: 12px !important;
+      padding-bottom: 92px !important;
+      overflow-x: hidden !important;
+    }
 
-          .serverProfileGrid {
-            gap: 12px !important;
-          }
+    .serverProfileGrid {
+      gap: 12px !important;
+    }
 
-          .profileSideCard {
-            border-radius: 24px !important;
-            overflow: hidden !important;
-          }
+    .profileSideCard {
+      border-radius: 24px !important;
+      overflow: hidden !important;
+    }
 
-          .profileSideCard > div:nth-child(2) {
-            padding: 14px !important;
-          }
+    .profileSideCard > div:nth-child(2) {
+      padding: 14px !important;
+    }
 
-          .profileAvatarBox {
-            width: min(190px, 58vw) !important;
-            max-width: 190px !important;
-            margin: 0 auto !important;
-            border-radius: 20px !important;
-          }
+    .profileAvatarBox {
+      width: min(170px, 54vw) !important;
+      max-width: 170px !important;
+      margin: 0 auto !important;
+      border-radius: 20px !important;
+    }
 
-          .profileScoreText {
-            font-size: 38px !important;
-          }
+    .profileScoreText {
+      font-size: 36px !important;
+    }
 
-          .profileStatsGrid {
-            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-            gap: 10px !important;
-          }
+    .profileRankPanel {
+      margin-top: 14px !important;
+      padding: 10px !important;
+      border-radius: 16px !important;
+    }
 
-          .profileEngagementGrid {
-            grid-template-columns: 1fr !important;
-          }
+    .profileRankTitle {
+      margin-bottom: 8px !important;
+      text-align: left !important;
+    }
 
-          .profileBadaCard svg {
-            min-width: 0 !important;
-            min-height: 320px !important;
-          }
+    .profileRankDesktopList {
+      display: none !important;
+    }
 
-          .profileActivityHeader,
-          .profileActivityRow {
-            grid-template-columns: 90px 1fr !important;
-          }
+    .profileRankMiniGrid {
+      display: grid !important;
+      grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+      gap: 6px !important;
+    }
 
-          .profileActivityHeader > div:nth-child(3),
-          .profileActivityHeader > div:nth-child(4),
-          .profileActivityHeader > div:nth-child(5),
-          .profileActivityRow > div:nth-child(3),
-          .profileActivityRow > div:nth-child(4),
-          .profileActivityRow > div:nth-child(5) {
-            grid-column: 1 / -1;
-            text-align: left !important;
-          }
-        }
+    .profileRankMiniCard {
+      padding: 9px 4px !important;
+      border-radius: 13px !important;
+    }
 
-        @media (max-width: 430px) {
-          .profileAvatarBox {
-            width: min(170px, 54vw) !important;
-            max-width: 170px !important;
-          }
+    .profileRankMiniCard div:first-child {
+      font-size: 10px !important;
+    }
 
-          .profileScoreText {
-            font-size: 36px !important;
-          }
-        }
-        @media (max-width: 430px) {
-        .profileStatsGrid {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-          gap: 8px !important;
-        }
+    .profileRankMiniCard div:nth-child(2) {
+      font-size: 15px !important;
+    }
 
-        .profileStatsGrid > div {
-          padding: 12px !important;
-          border-radius: 16px !important;
-        }
+    .profileStatsGrid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px !important;
+    }
 
-        .profileStatsGrid > div > div:nth-child(2) {
-          font-size: 24px !important;
-        }
-      }
-      `}</style>
+    .profileStatsGrid > div {
+      padding: 12px !important;
+      border-radius: 16px !important;
+    }
+
+    .profileStatsGrid > div > div:nth-child(2) {
+      font-size: 24px !important;
+    }
+
+    .profileGuestEngagement .cardHeader {
+  padding: 14px 16px !important;
+  text-align: center !important;
+}
+
+.profileGuestEngagement .cardHeader > div:first-child {
+  width: 100% !important;
+  text-align: center !important;
+}
+
+.profileGuestEngagement .cardTitle {
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+}
+
+.profileGuestEngagement .cardSub {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  margin-top: 4px !important;
+}
+
+.profileEngagementGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.profileEngagementGrid > * {
+  min-width: 0 !important;
+}
+
+.profileEngagementGrid > * > div,
+.profileEngagementGrid > * button {
+  width: 100% !important;
+}
+
+    .profileBadaCard {
+  flex: none !important;
+}
+
+.profileBadaCard .cardHeader {
+  padding: 12px 14px !important;
+  gap: 8px !important;
+}
+
+.profileBadaCard .cardHeader .cardTitle {
+  font-size: 16px !important;
+  line-height: 1.15 !important;
+}
+
+.profileBadaCard .cardHeader .cardSub {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  margin-top: 2px !important;
+}
+
+.profileBadaCard .cardHeader > div:last-child {
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  row-gap: 6px !important;
+}
+
+.profileBadaCard .cardHeader > div:last-child > div:first-child {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.profileBadaCard .cardHeader > div:last-child > div:nth-child(2) {
+  padding: 3px !important;
+  gap: 4px !important;
+}
+
+.profileBadaCard .cardHeader > div:last-child > div:nth-child(2) button {
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+}
+
+.profileBadaCard .cardHeader > div:last-child > div:last-child {
+  padding: 7px 12px !important;
+  font-size: 12px !important;
+}
+
+.profileBadaChartBody {
+  padding: 8px 12px 12px !important;
+  flex: none !important;
+  min-height: 0 !important;
+  display: block !important;
+}
+
+.profileBadaChartBox {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 6px !important;
+  display: block !important;
+  align-items: unset !important;
+}
+
+.profileBadaSvgWrap {
+  width: 100% !important;
+  height: auto !important;
+  overflow-x: hidden !important;
+  display: block !important;
+}
+
+.profileBadaCard svg {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  display: block !important;
+}
+
+    .profileActivityHeader,
+    .profileActivityRow {
+      grid-template-columns: 1fr auto !important;
+      align-items: center !important;
+    }
+
+    .profileActivityHeader > div:nth-child(2),
+    .profileActivityHeader > div:nth-child(4),
+    .profileActivityHeader > div:nth-child(5),
+    .profileActivityRow > div:nth-child(2),
+    .profileActivityRow > div:nth-child(4),
+    .profileActivityRow > div:nth-child(5) {
+      display: none !important;
+    }
+
+    .profileActivityHeader > div:nth-child(1),
+    .profileActivityRow > div:nth-child(1) {
+      text-align: left !important;
+    }
+
+    .profileActivityHeader > div:nth-child(3),
+    .profileActivityRow > div:nth-child(3) {
+      text-align: right !important;
+      grid-column: auto !important;
+    }
+
+    .profileActivityRow {
+      padding: 13px 14px !important;
+      gap: 10px !important;
+    }
+
+    .profileActivityRow > div:nth-child(1) {
+      font-size: 14px !important;
+    }
+
+    .profileActivityRow > div:nth-child(3) {
+      font-size: 12px !important;
+      color: var(--muted) !important;
+      font-weight: 900 !important;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .profileAvatarBox {
+      width: min(155px, 50vw) !important;
+      max-width: 155px !important;
+    }
+    .profileBadaAverageBadge {
+      padding: 6px 9px !important;
+      font-size: 10px !important;
+    }
+
+    .profileScoreText {
+      font-size: 34px !important;
+    }
+
+    .profileRankMiniGrid {
+      gap: 5px !important;
+    }
+
+    .profileRankMiniCard {
+      padding: 8px 3px !important;
+    }
+
+    .profileRankMiniCard div:first-child {
+      font-size: 9px !important;
+    }
+
+    .profileRankMiniCard div:nth-child(2) {
+      font-size: 14px !important;
+    }
+  }
+
+  .profileBadaTitleRow {
+  align-items: flex-start !important;
+}
+
+.profileBadaAverageBadge {
+  padding: 7px 10px !important;
+  font-size: 11px !important;
+}
+  .profileGuestEngagement .cardHeader {
+  padding: 12px 14px !important;
+}
+
+.profileGuestEngagement .cardTitle {
+  font-size: 15px !important;
+}
+
+.profileGuestEngagement .cardSub {
+  font-size: 11px !important;
+}
+
+
+
+.profileEngagementGrid > * {
+  min-width: 0 !important;
+}
+`}</style>
     </>
   )
 }
