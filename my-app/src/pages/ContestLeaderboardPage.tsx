@@ -40,14 +40,59 @@ function formatDate(value: string) {
   })
 }
 
-function getDateTime(value: string, endOfDay = false) {
-  const date = new Date(`${value}T${endOfDay ? "23:59:59" : "00:00:00"}`)
+const BUSINESS_TIME_ZONE = "America/Denver"
+const BUSINESS_START_HOUR = 7
 
-  if (Number.isNaN(date.getTime())) {
+function getTimeZoneOffset(date: Date, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date)
+
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)])
+  )
+
+  const zonedAsUtc = Date.UTC(
+    values.year,
+    values.month - 1,
+    values.day,
+    values.hour,
+    values.minute,
+    values.second
+  )
+
+  return zonedAsUtc - date.getTime()
+}
+
+function getMountainBusinessDateTime(value: string) {
+  const [year, month, day] = value.split("-").map(Number)
+
+  if (!year || !month || !day) {
     return null
   }
 
-  return date
+  const utcGuess = new Date(
+    Date.UTC(year, month - 1, day, BUSINESS_START_HOUR, 0, 0)
+  )
+
+  const offset = getTimeZoneOffset(utcGuess, BUSINESS_TIME_ZONE)
+
+  return new Date(utcGuess.getTime() - offset)
+}
+
+function addBusinessWeeks(start: Date, weeks: number) {
+  const end = new Date(start)
+  end.setDate(end.getDate() + weeks * 7)
+  return end
 }
 
 function formatDuration(ms: number) {
@@ -72,18 +117,19 @@ function getContestCountdown(contest: ContestData, now: Date) {
     return "Cancelled"
   }
 
-  const start = getDateTime(contest.startDate)
-  const end = getDateTime(contest.endDate, true)
+  const start = getMountainBusinessDateTime(contest.startDate)
 
-  if (!start || !end) {
+  if (!start) {
     return "Schedule not set"
   }
+
+  const end = addBusinessWeeks(start, contest.durationWeeks)
 
   if (now < start) {
     return `Starts in ${formatDuration(start.getTime() - now.getTime())}`
   }
 
-  if (now <= end) {
+  if (now < end) {
     return `Ends in ${formatDuration(end.getTime() - now.getTime())}`
   }
 
@@ -253,7 +299,15 @@ export default function ContestLeaderboardPage({
     <div className="grid gap-2 lg:grid-cols-[1fr_420px] lg:items-center">
       <div className="flex min-h-[120px] flex-col justify-between rounded-[1.25rem] border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card)_72%,transparent)] p-4">
         <div>
+                                  <h1 className="mb-5 text-4xl font-black tracking-tight text-[var(--text)] md:text-5xl">
+            {contest.name}{" "}
+            <span className="align-middle text-base font-black text-[var(--muted)] md:text-lg">
+              ({contest.durationWeeks} week
+              {contest.durationWeeks === 1 ? "" : "s"})
+            </span>
+          </h1>
           <div className="flex flex-wrap items-center gap-2">
+
             <span
               className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getMetricBadge(
                 contest.metric
@@ -271,22 +325,12 @@ export default function ContestLeaderboardPage({
             </span>
           </div>
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-[var(--text)] md:text-4xl">
-            {contest.name}{" "}
-            <span className="align-middle text-base font-black text-[var(--muted)] md:text-lg">
-              ({contest.durationWeeks} week
-              {contest.durationWeeks === 1 ? "" : "s"})
-            </span>
-          </h1>
-
-          <div className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[var(--muted)]">
-            Store {contest.storeNumber}
-          </div>
+         
         </div>
       </div>
 
       <div className="flex min-h-[130px] flex-col justify-center rounded-[1.25rem] border border-cyan-400/30 bg-cyan-500/10 p-4 text-left">
-        <div className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+        <div className="text-sm font-black uppercase tracking-[0.18em] text-cyan-700">
           Contest Clock
         </div>
 
