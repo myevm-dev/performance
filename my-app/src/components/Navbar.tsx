@@ -60,16 +60,28 @@ function DesktopNavItem({
       target={external ? "_blank" : undefined}
       rel={external ? "noreferrer" : undefined}
       title={title || label}
-      className={`group relative inline-flex min-h-8 items-center justify-center whitespace-nowrap px-1 text-sm font-black no-underline outline-none transition hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40 ${
+      className={`group relative inline-flex min-h-8 items-center justify-center gap-1.5 whitespace-nowrap px-1 text-base font-black no-underline outline-none transition hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/40 ${
         isActive ? colorClass : "text-[var(--muted)] hover:text-[var(--text)]"
       }`}
     >
       <span
         className={`absolute -top-2 left-1/2 h-1 w-full max-w-36 -translate-x-1/2 rounded-b-full transition ${
-          isActive ? `scale-x-100 ${activeColorClass}` : `scale-x-0 ${activeColorClass} group-hover:scale-x-100`
+          isActive
+            ? `scale-x-100 ${activeColorClass}`
+            : `scale-x-0 ${activeColorClass} group-hover:scale-x-100`
         }`}
       />
-      {label}
+
+      <span>{label}</span>
+
+      {external ? (
+        <span
+          aria-hidden="true"
+          className="text-[16px] font-black leading-none opacity-80 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100"
+        >
+          ➚
+        </span>
+      ) : null}
     </a>
   )
 }
@@ -146,7 +158,7 @@ export default function Navbar({ activeStore, theme, setTheme }: NavbarProps) {
 
             <DesktopNavItem
               href={`https://www.daytadna.com/team/${activeStore}`}
-              label="View Team Page"
+              label="View Team"
               title={`Open Team ${activeStore}`}
               external
               isActive={isTeam}
