@@ -1307,3 +1307,22 @@ html[data-theme="light"] .panelTitle {
   border-color: rgba(34, 211, 238, 0.9) !important;
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
 }
+
+.bulletinClickableRow {
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.bulletinClickableRow:hover {
+  background: color-mix(in srgb, var(--card2) 42%, transparent);
+}
+
+.bulletinClickableRow:focus-visible {
+  outline: 2px solid rgba(34, 211, 238, 0.7);
+  outline-offset: -2px;
+}
+
+.bulletinTable tbody td {
+  padding-top: 28px;
+  padding-bottom: 28px;
+}

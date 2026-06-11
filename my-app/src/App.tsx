@@ -678,7 +678,7 @@ function LeaderboardApp({
           </div>
 
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time. <br/> BADA & Promos weekly · Last BADA refresh:{" "}
+            Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last BADA refresh:{" "}
             {lastBadaRefresh || "Not published yet"}
           </p>
         </div>
