@@ -248,92 +248,90 @@ export default function ContestLeaderboardPage({
           </div>
         ) : contest ? (
           <>
-            <div className="border-b border-[var(--stroke)] px-6 py-6">
-                <div className="rounded-[2rem] border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_42%,transparent)] p-5 shadow-sm">
-                    <div className="grid gap-5 lg:grid-cols-[1fr_420px] lg:items-stretch">
-                    <div className="flex min-h-[190px] flex-col justify-between rounded-[1.5rem] border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card)_72%,transparent)] p-5">
-                        <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getMetricBadge(
-                                contest.metric
-                            )}`}
-                            >
-                            {contest.metric}
-                            </span>
+            <div className="border-b border-[var(--stroke)] px-3 py-3">
+  <div className="rounded-[1.3rem] border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_42%,transparent)] p-2 shadow-sm">
+    <div className="grid gap-2 lg:grid-cols-[1fr_420px] lg:items-center">
+      <div className="flex min-h-[120px] flex-col justify-between rounded-[1.25rem] border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card)_72%,transparent)] p-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getMetricBadge(
+                contest.metric
+              )}`}
+            >
+              {contest.metric}
+            </span>
 
-                            <span
-                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getStatusBadge(
-                                contest.status
-                            )}`}
-                            >
-                            {formatStatus(contest.status)}
-                            </span>
-                        </div>
+            <span
+              className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getStatusBadge(
+                contest.status
+              )}`}
+            >
+              {formatStatus(contest.status)}
+            </span>
+          </div>
 
-                        <h1 className="mt-5 text-4xl font-black tracking-tight text-[var(--text)] md:text-5xl">
-                            {contest.name}{" "}
-                            <span className="align-middle text-lg font-black text-[var(--muted)] md:text-xl">
-                            ({contest.durationWeeks} week
-                            {contest.durationWeeks === 1 ? "" : "s"})
-                            </span>
-                        </h1>
-                        </div>
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-[var(--text)] md:text-4xl">
+            {contest.name}{" "}
+            <span className="align-middle text-base font-black text-[var(--muted)] md:text-lg">
+              ({contest.durationWeeks} week
+              {contest.durationWeeks === 1 ? "" : "s"})
+            </span>
+          </h1>
 
-                        <div className="mt-5 text-sm font-black uppercase tracking-[0.16em] text-[var(--muted)]">
-                        Store {contest.storeNumber}
-                        </div>
-                    </div>
+          <div className="mt-2 text-sm font-black uppercase tracking-[0.16em] text-[var(--muted)]">
+            Store {contest.storeNumber}
+          </div>
+        </div>
+      </div>
 
-                    <div className="flex min-h-[190px] flex-col justify-center rounded-[1.5rem] border border-cyan-400/30 bg-cyan-500/10 p-5 text-left lg:text-right">
-                        <div className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
-                        Contest Clock
-                        </div>
+      <div className="flex min-h-[130px] flex-col justify-center rounded-[1.25rem] border border-cyan-400/30 bg-cyan-500/10 p-4 text-left">
+        <div className="text-xs font-black uppercase tracking-[0.18em] text-cyan-700">
+          Contest Clock
+        </div>
 
-                        <div className="mt-2 text-4xl font-black tracking-tight text-cyan-600 md:text-5xl">
-                        {getContestCountdown(contest, now)}
-                        </div>
+        <div className="mt-3 text-3xl font-black leading-none tracking-tight text-cyan-600 md:text-4xl">
+          {getContestCountdown(contest, now)}
+        </div>
 
-                        <div className="mt-3 text-sm font-bold text-[var(--muted)]">
-                        {formatDate(contest.startDate)} to {formatDate(contest.endDate)}
-                        </div>
-                    </div>
-                    </div>
+        <div className="mt-2 text-sm font-bold text-[var(--muted)]">
+          {formatDate(contest.startDate)} to {formatDate(contest.endDate)}
+        </div>
+      </div>
+    </div>
 
-                    {contest.prizes.length > 0 ? (
-                    <div className="mt-5">
-                        <div className="mb-3 flex items-center justify-center gap-3">
-                        <div className="h-px flex-1 bg-[var(--stroke)]" />
+    {contest.prizes.length > 0 ? (
+      <div className="mt-3">
+        <div className="mb-2 flex items-center justify-center gap-3">
+          <div className="h-px flex-1 bg-[var(--stroke)]" />
+          <div className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">
+            Prizes
+          </div>
+          <div className="h-px flex-1 bg-[var(--stroke)]" />
+        </div>
 
-                        <div className="text-xs font-black uppercase tracking-[0.2em] text-[var(--muted)]">
-                            Prizes
-                        </div>
-
-                        <div className="h-px flex-1 bg-[var(--stroke)]" />
-                        </div>
-
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                        {[...contest.prizes]
-                            .sort((a, b) => a.place - b.place)
-                            .map((prize) => (
-                            <div
-                                key={prize.place}
-                                className="rounded-2xl border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card)_78%,transparent)] px-4 py-4 text-center shadow-sm"
-                            >
-                                <div className="text-xs font-black uppercase tracking-[0.16em] text-[var(--muted)]">
-                                Place #{prize.place}
-                                </div>
-
-                                <div className="mt-2 text-lg font-black text-[var(--text)]">
-                                {prize.prize}
-                                </div>
-                            </div>
-                            ))}
-                        </div>
-                    </div>
-                    ) : null}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[...contest.prizes]
+            .sort((a, b) => a.place - b.place)
+            .map((prize) => (
+              <div
+                key={prize.place}
+                className="rounded-xl border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card)_78%,transparent)] px-2 py-2 text-center shadow-sm"
+              >
+                <div className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Place #{prize.place}
                 </div>
+
+                <div className="mt-1 text-base font-black text-[var(--text)]">
+                  {prize.prize}
                 </div>
+              </div>
+            ))}
+        </div>
+      </div>
+    ) : null}
+  </div>
+</div>
 
             <div className="tableWrap" aria-label="Contest leaderboard table">
               <table className="table">
