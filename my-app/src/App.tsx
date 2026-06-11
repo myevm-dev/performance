@@ -378,6 +378,26 @@ function ServerProfileRoute({
   )
 }
 
+function ContestRoute({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
+  const activeStore =
+    localStorage.getItem("viewedStore") ??
+    localStorage.getItem("homeStore") ??
+    "6909"
+
+  return (
+    <div className="appBg">
+      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
+      <ContestPage activeStore={activeStore} />
+    </div>
+  )
+}
+
 function LeaderboardApp({
   theme,
   setTheme,
@@ -417,6 +437,11 @@ function LeaderboardApp({
   const [servers, setServers] = useState<ServerStats[]>([])
 
   const activeStore = viewedStore || homeStore || "6909"
+  useEffect(() => {
+    if (!activeStore) return
+    localStorage.setItem("viewedStore", activeStore)
+  }, [activeStore])
+
   const activeStoreName =
     localStores.find((s) => s.storeNumber === activeStore)?.name ??
     storesList.find((s) => s.storeNumber === activeStore)?.label ??
@@ -950,22 +975,6 @@ function BulletinBoardRoute({
   )
 }
 
-function ContestRoute({
-  theme,
-  setTheme,
-}: {
-  theme: ThemeMode
-  setTheme: (theme: ThemeMode) => void
-}) {
-  const activeStore = localStorage.getItem("homeStore") ?? "6909"
-
-  return (
-    <div className="appBg">
-      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
-      <ContestPage />
-    </div>
-  )
-}
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)

@@ -1,380 +1,378 @@
 // src/pages/ContestPage.tsx
-import { useMemo } from "react"
 
-type ContestStatus = "upcoming" | "active" | "completed" | "cancelled"
+import { useEffect, useMemo, useState } from "react"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "../lib/firebase"
 
-type Prize = {
+
+type ContestPrize = {
   place: number
   prize: string
 }
 
-type LeaderboardRow = {
-  rank: number
-  staffName: string
-  staffId: string
-  storeNumber: string
-  score: number
-  formattedScore: string
-  prize?: string
-}
-
-type Contest = {
+type ContestRow = {
   id: string
   storeNumber: string
-  name: string
+  contest: string
   metric: string
-  startDate: string
-  endDate: string
+  dates: string
+  durationWeeks: number
+  prize: string
   status: ContestStatus
-  prizes: Prize[]
+  body: string
 }
 
-const mockContest: Contest = {
-  id: "demo-contest",
-  storeNumber: "0000",
-  name: "Review Sprint",
-  metric: "Google Reviews",
-  startDate: "2026-06-18",
-  endDate: "2026-06-24",
-  status: "active",
-  prizes: [
-    { place: 1, prize: "$25 Gift Card" },
-    { place: 2, prize: "Free Meal" },
-    { place: 3, prize: "Dessert Voucher" },
-  ],
+type ContestDocData = {
+  storeNumber?: string
+  name?: string
+  metric?: string
+  durationWeeks?: number
+  startDate?: string
+  endDate?: string
+  prizes?: ContestPrize[]
+  status?: FirestoreContestStatus
 }
 
-const mockRows: LeaderboardRow[] = [
-  {
-    rank: 1,
-    staffName: "Nathan Z",
-    staffId: "ABC123",
-    storeNumber: "0000",
-    score: 18,
-    formattedScore: "18",
-    prize: "$25 Gift Card",
-  },
-  {
-    rank: 2,
-    staffName: "Maria G",
-    staffId: "DEF456",
-    storeNumber: "0000",
-    score: 14,
-    formattedScore: "14",
-    prize: "Free Meal",
-  },
-  {
-    rank: 3,
-    staffName: "Chris R",
-    staffId: "GHI789",
-    storeNumber: "0000",
-    score: 11,
-    formattedScore: "11",
-    prize: "Dessert Voucher",
-  },
-  {
-    rank: 4,
-    staffName: "Jordan T",
-    staffId: "JKL012",
-    storeNumber: "0000",
-    score: 8,
-    formattedScore: "8",
-  },
-]
+type ContestStatus = "Upcoming" | "Active" | "Completed" | "Cancelled"
+
+type FirestoreContestStatus =
+  | "upcoming"
+  | "active"
+  | "completed"
+  | "cancelled"
 
 function formatDate(value: string) {
   const date = new Date(`${value}T00:00:00`)
 
   if (Number.isNaN(date.getTime())) {
-    return value
+    return value || "Not set"
   }
 
-  return date.toLocaleDateString(undefined, {
-    month: "short",
+  return date.toLocaleDateString("en-US", {
+    month: "numeric",
     day: "numeric",
-    year: "numeric",
+    year: "2-digit",
   })
 }
 
-function getStatusStyles(status: ContestStatus) {
-  if (status === "active") {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300"
+function normalizeFirestoreStatus(status: unknown): FirestoreContestStatus | undefined {
+  if (
+    status === "upcoming" ||
+    status === "active" ||
+    status === "completed" ||
+    status === "cancelled"
+  ) {
+    return status
   }
 
-  if (status === "upcoming") {
-    return "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300"
-  }
-
-  if (status === "completed") {
-    return "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-300"
-  }
-
-  return "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300"
+  return undefined
 }
 
-function getRankGradient(rank: number) {
-  if (rank === 1) {
-    return "from-yellow-400 via-amber-500 to-orange-500"
+function getLiveStatus(data: {
+  startDate: string
+  endDate: string
+  status?: unknown
+}): ContestStatus {
+  const normalizedStatus = normalizeFirestoreStatus(data.status)
+
+  if (normalizedStatus === "cancelled") return "Cancelled"
+
+  const now = new Date()
+  const start = new Date(`${data.startDate}T00:00:00`)
+  const end = new Date(`${data.endDate}T23:59:59`)
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    if (normalizedStatus === "active") return "Active"
+    if (normalizedStatus === "completed") return "Completed"
+
+    return "Upcoming"
   }
 
-  if (rank === 2) {
-    return "from-slate-300 via-slate-400 to-slate-500"
-  }
+  if (now < start) return "Upcoming"
+  if (now > end) return "Completed"
 
-  if (rank === 3) {
-    return "from-orange-400 via-orange-600 to-amber-700"
-  }
-
-  return "from-blue-500 via-indigo-500 to-violet-500"
+  return "Active"
 }
 
-export default function ContestPage() {
-  const contest = mockContest
-  const rows = mockRows
+function formatPrizeSummary(prizes: ContestPrize[]) {
+  if (!prizes.length) return "No prize listed"
 
-  const topPrizeRows = useMemo(() => {
-    return contest.prizes
-      .sort((a, b) => a.place - b.place)
-      .map((prize) => {
-        const winner = rows.find((row) => row.rank === prize.place)
+  const sorted = [...prizes].sort((a, b) => a.place - b.place)
 
-        return {
-          ...prize,
-          winner,
-        }
-      })
-  }, [contest.prizes, rows])
+  if (sorted.length === 1) {
+    return sorted[0].prize
+  }
+
+  const firstPrize = sorted.find((prize) => prize.place === 1)
+
+  return `${sorted.length} prizes · 1st: ${
+    firstPrize?.prize ?? sorted[0].prize
+  }`
+}
+
+function getStatusBadge(status: ContestStatus) {
+  if (status === "Active") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+  }
+
+  if (status === "Upcoming") {
+    return "border-blue-500/30 bg-blue-500/10 text-blue-600"
+  }
+
+  if (status === "Completed") {
+    return "border-violet-500/30 bg-violet-500/10 text-violet-600"
+  }
+
+  return "border-red-500/30 bg-red-500/10 text-red-600"
+}
+
+function getMetricBadge(metric: string) {
+  if (metric.includes("Review")) {
+    return "border-blue-500/30 bg-blue-500/10 text-blue-600"
+  }
+
+  if (metric.includes("Rewards")) {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-600"
+  }
+
+  if (metric.includes("BADA")) {
+    return "border-cyan-500/30 bg-cyan-500/10 text-cyan-600"
+  }
+
+  if (metric.includes("Score")) {
+    return "border-violet-500/30 bg-violet-500/10 text-violet-600"
+  }
+
+  return "border-amber-500/30 bg-amber-500/10 text-amber-600"
+}
+
+export default function ContestPage({
+  activeStore,
+}: {
+  activeStore: string
+}) {
+  const [contests, setContests] = useState<ContestRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | ContestStatus>("all")
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadContests() {
+      setLoading(true)
+
+      try {
+        const snap = await getDocs(
+          collection(db, "stores", activeStore, "contests")
+        )
+
+        if (!alive) return
+
+        const rows: ContestRow[] = snap.docs.map((docSnap) => {
+          const data = docSnap.data() as ContestDocData
+
+          const startDate = data.startDate ?? ""
+          const endDate = data.endDate ?? ""
+          const prizes = Array.isArray(data.prizes) ? data.prizes : []
+          const status = getLiveStatus({
+            startDate,
+            endDate,
+            status: data.status,
+          })
+
+          return {
+            id: docSnap.id,
+            storeNumber: data.storeNumber ?? activeStore,
+            contest: data.name ?? "Untitled Contest",
+            metric: data.metric ?? "Contest",
+            dates: `${formatDate(startDate)} to ${formatDate(endDate)}`,
+            durationWeeks: data.durationWeeks ?? 1,
+            prize: formatPrizeSummary(prizes),
+            status,
+            body: `${data.durationWeeks ?? 1} business week${
+              (data.durationWeeks ?? 1) === 1 ? "" : "s"
+            } · Store ${data.storeNumber ?? activeStore}`,
+          }
+        })
+
+        rows.sort((a, b) => {
+          const statusOrder: Record<ContestStatus, number> = {
+            Active: 1,
+            Upcoming: 2,
+            Completed: 3,
+            Cancelled: 4,
+          }
+
+          if (statusOrder[a.status] !== statusOrder[b.status]) {
+            return statusOrder[a.status] - statusOrder[b.status]
+          }
+
+          return a.contest.localeCompare(b.contest)
+        })
+
+        setContests(rows)
+      } catch (error) {
+        console.error("Failed to load contests:", error)
+
+        if (!alive) return
+        setContests([])
+      } finally {
+        if (alive) setLoading(false)
+      }
+    }
+
+    loadContests()
+
+    return () => {
+      alive = false
+    }
+  }, [activeStore])
+
+  const filteredContests = useMemo(() => {
+    const query = search.toLowerCase().trim()
+
+    return contests.filter((contest) => {
+      const matchesStatus =
+        statusFilter === "all" || contest.status === statusFilter
+
+      const matchesSearch =
+        !query ||
+        contest.contest.toLowerCase().includes(query) ||
+        contest.metric.toLowerCase().includes(query) ||
+        contest.dates.toLowerCase().includes(query) ||
+        contest.prize.toLowerCase().includes(query) ||
+        contest.status.toLowerCase().includes(query) ||
+        contest.storeNumber.toLowerCase().includes(query)
+
+      return matchesStatus && matchesSearch
+    })
+  }, [contests, search, statusFilter])
 
   return (
-    <main className="min-h-screen bg-main px-4 py-6 text-foreground">
-      <div className="mx-auto max-w-6xl space-y-5">
-        <section className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-          <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 px-5 py-6 text-white sm:px-7">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <div className="inline-flex rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white/85">
-                  Store {contest.storeNumber}
-                </div>
-
-                <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-5xl">
-                  {contest.name}
-                </h1>
-
-                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-white/85">
-                  Live contest leaderboard for {contest.metric}. Contest runs
-                  from {formatDate(contest.startDate)} to{" "}
-                  {formatDate(contest.endDate)}.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <HeroStat label="Metric" value={contest.metric} />
-                <HeroStat label="Prizes" value={String(contest.prizes.length)} />
-                <HeroStat label="Players" value={String(rows.length)} />
-              </div>
-            </div>
+    <main className="container">
+      <div className="card">
+        <div className="cardHeader leaderboardHeader">
+          <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
+            <select
+              className="leaderboardHeaderAction"
+              value={statusFilter}
+              onChange={(event) =>
+                setStatusFilter(event.target.value as "all" | ContestStatus)
+              }
+              aria-label="Filter contests by status"
+            >
+              <option value="all">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
           </div>
 
-          <div className="space-y-5 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
-                  Contest Status
-                </div>
-
-                <div className="mt-1 text-xl font-black text-foreground">
-                  {contest.status.charAt(0).toUpperCase() +
-                    contest.status.slice(1)}
-                </div>
-              </div>
-
-              <div
-                className={`w-fit rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.16em] ${getStatusStyles(
-                  contest.status
-                )}`}
-              >
-                {contest.status}
-              </div>
-            </div>
-
-            <section className="grid gap-4 md:grid-cols-3">
-              {topPrizeRows.map((prize) => (
-                <PrizeCard
-                  key={prize.place}
-                  place={prize.place}
-                  prize={prize.prize}
-                  winner={prize.winner}
-                />
-              ))}
-            </section>
-
-            <section className="rounded-3xl border border-border bg-background p-4 shadow-sm">
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-2xl font-black tracking-tight text-foreground">
-                    Contest Leaderboard
-                  </h2>
-
-                  <p className="mt-1 text-sm font-semibold text-muted-foreground">
-                    Rankings update from the contest scoring app.
-                  </p>
-                </div>
-
-                <div className="rounded-full border border-border bg-muted px-3 py-1 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
-                  {contest.metric}
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[760px] border-separate border-spacing-y-2">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                      <th className="px-4 py-2">Rank</th>
-                      <th className="px-4 py-2">Server</th>
-                      <th className="px-4 py-2">Store</th>
-                      <th className="px-4 py-2 text-right">Score</th>
-                      <th className="px-4 py-2 text-right">Prize</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {rows.length > 0 ? (
-                      rows.map((row) => (
-                        <tr key={row.staffId}>
-                          <td className="rounded-l-2xl border-y border-l border-border bg-card px-4 py-4">
-                            <div
-                              className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${getRankGradient(
-                                row.rank
-                              )} text-sm font-black text-white shadow-sm`}
-                            >
-                              #{row.rank}
-                            </div>
-                          </td>
-
-                          <td className="border-y border-border bg-card px-4 py-4">
-                            <div className="font-black text-foreground">
-                              {row.staffName}
-                            </div>
-
-                            <div className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                              {row.staffId}
-                            </div>
-                          </td>
-
-                          <td className="border-y border-border bg-card px-4 py-4 text-sm font-semibold text-muted-foreground">
-                            Store {row.storeNumber}
-                          </td>
-
-                          <td className="border-y border-border bg-card px-4 py-4 text-right text-xl font-black text-primary">
-                            {row.formattedScore}
-                          </td>
-
-                          <td className="rounded-r-2xl border-y border-r border-border bg-card px-4 py-4 text-right">
-                            {row.prize ? (
-                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-black uppercase tracking-[0.14em] text-amber-600 dark:text-amber-300">
-                                {row.prize}
-                              </span>
-                            ) : (
-                              <span className="text-sm font-semibold text-muted-foreground">
-                                No prize
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan={5}
-                          className="rounded-2xl border border-dashed border-border bg-muted/40 px-4 py-10 text-center"
-                        >
-                          <div className="text-lg font-black text-foreground">
-                            No leaderboard rows yet.
-                          </div>
-
-                          <p className="mt-2 text-sm font-semibold text-muted-foreground">
-                            Scores will appear once contest data is available.
-                          </p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+          <div className="leaderboardStoreSearchWrap">
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search contests"
+              className="leaderboardStoreSearchInput"
+            />
           </div>
-        </section>
+
+          <div className="leaderboardHeaderActions leaderboardHeaderActionsRight">
+            <button type="button" className="leaderboardHeaderAction">
+              <span aria-hidden>⌕</span>
+              <span>Search</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="tableWrap" aria-label="Contests table scroll area">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Contest</th>
+                <th>Metric</th>
+                <th>Dates</th>
+                <th>Duration</th>
+                <th>Prize</th>
+                <th style={{ textAlign: "right" }}>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", padding: 56 }}>
+                    <div style={{ fontWeight: 900, fontSize: 20 }}>
+                      Loading contests...
+                    </div>
+
+                    <div className="meta" style={{ marginTop: 8 }}>
+                      Checking Store {activeStore}.
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredContests.length > 0 ? (
+                filteredContests.map((contest) => (
+                  <tr key={contest.id}>
+                    <td>
+                      <div className="nameCell">
+                        <div>
+                          <div className="clickableName">{contest.contest}</div>
+                          <div className="meta">{contest.body}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getMetricBadge(
+                          contest.metric
+                        )}`}
+                      >
+                        {contest.metric}
+                      </span>
+                    </td>
+
+                    <td>{contest.dates}</td>
+
+                    <td>
+                      {contest.durationWeeks} week
+                      {contest.durationWeeks === 1 ? "" : "s"}
+                    </td>
+
+                    <td>{contest.prize}</td>
+
+                    <td style={{ textAlign: "right" }}>
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getStatusBadge(
+                          contest.status
+                        )}`}
+                      >
+                        {contest.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: "center", padding: 56 }}>
+                    <div style={{ fontWeight: 900, fontSize: 20 }}>
+                      No contests to see for now.
+                    </div>
+
+                    <div className="meta" style={{ marginTop: 8 }}>
+                      Active and upcoming store contests will appear here once
+                      posted for Store {activeStore}.
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </main>
-  )
-}
-
-function HeroStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-white/12 px-4 py-3 backdrop-blur">
-      <div className="max-w-[110px] truncate text-lg font-black leading-none text-white">
-        {value}
-      </div>
-
-      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-white/75">
-        {label}
-      </div>
-    </div>
-  )
-}
-
-function PrizeCard({
-  place,
-  prize,
-  winner,
-}: {
-  place: number
-  prize: string
-  winner?: LeaderboardRow
-}) {
-  return (
-    <article className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-      <div
-        className={`bg-gradient-to-br ${getRankGradient(
-          place
-        )} px-5 py-4 text-white`}
-      >
-        <div className="text-xs font-black uppercase tracking-[0.18em] text-white/80">
-          Prize Place
-        </div>
-
-        <div className="mt-1 text-3xl font-black">#{place}</div>
-      </div>
-
-      <div className="p-5">
-        <div className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
-          Prize
-        </div>
-
-        <div className="mt-1 text-xl font-black text-foreground">{prize}</div>
-
-        <div className="mt-4 rounded-2xl border border-border bg-background p-4">
-          <div className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
-            Current Holder
-          </div>
-
-          {winner ? (
-            <>
-              <div className="mt-1 text-lg font-black text-foreground">
-                {winner.staffName}
-              </div>
-
-              <div className="mt-1 text-sm font-semibold text-muted-foreground">
-                {winner.formattedScore} points
-              </div>
-            </>
-          ) : (
-            <div className="mt-1 text-sm font-semibold text-muted-foreground">
-              No winner yet
-            </div>
-          )}
-        </div>
-      </div>
-    </article>
   )
 }
