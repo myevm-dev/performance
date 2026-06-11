@@ -18,6 +18,7 @@ import ScoringInfoModal from "./components/ScoringInfoModal"
 import ChangelogModal from "./components/ChangelogModal"
 import BulletinBoardPage from "./pages/BulletinBoardPage"
 import ContestPage from "./pages/ContestPage"
+import ContestLeaderboardPage from "./pages/ContestLeaderboardPage"
 
 type ServerStats = {
   id: string
@@ -975,6 +976,25 @@ function BulletinBoardRoute({
   )
 }
 
+function ContestLeaderboardRoute({
+  theme,
+  setTheme,
+}: {
+  theme: ThemeMode
+  setTheme: (theme: ThemeMode) => void
+}) {
+  const activeStore =
+    localStorage.getItem("viewedStore") ??
+    localStorage.getItem("homeStore") ??
+    "6909"
+
+  return (
+    <div className="appBg">
+      <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
+      <ContestLeaderboardPage activeStore={activeStore} />
+    </div>
+  )
+}
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme)
@@ -1000,11 +1020,18 @@ export default function App() {
         path="/bulletin"
         element={<BulletinBoardRoute theme={theme} setTheme={setTheme} />}
       />
+      <Route
+        path="/contest/:contestId"
+        element={
+          <ContestLeaderboardRoute theme={theme} setTheme={setTheme} />
+        }
+      />
 
       <Route
         path="/contest"
         element={<ContestRoute theme={theme} setTheme={setTheme} />}
       />
     </Routes>
+
   )
 }

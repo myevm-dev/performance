@@ -1,8 +1,10 @@
 // src/pages/ContestPage.tsx
 
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "../lib/firebase"
+
 
 
 type ContestPrize = {
@@ -151,6 +153,7 @@ export default function ContestPage({
 }: {
   activeStore: string
 }) {
+  const navigate = useNavigate()
   const [contests, setContests] = useState<ContestRow[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -315,7 +318,19 @@ export default function ContestPage({
                 </tr>
               ) : filteredContests.length > 0 ? (
                 filteredContests.map((contest) => (
-                  <tr key={contest.id}>
+                  <tr
+                    key={contest.id}
+                    className="contestClickableRow"
+                    onClick={() => navigate(`/contest/${contest.id}`)}
+                    tabIndex={0}
+                    role="button"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        navigate(`/contest/${contest.id}`)
+                      }
+                    }}
+                  >
                     <td>
                       <div className="nameCell">
                         <div>
