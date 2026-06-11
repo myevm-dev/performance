@@ -1281,3 +1281,29 @@ html[data-theme="light"] .panelTitle {
   padding: 4px 0 28px;
   margin: 0 auto;
 }
+.bulletinSelect {
+  min-width: 250px;
+  appearance: auto;
+  color: var(--text) !important;
+  background-color: color-mix(in srgb, var(--card2) 92%, #16091b) !important;
+  border: 1px solid rgba(34, 211, 238, 0.7) !important;
+  color-scheme: dark;
+}
+
+.bulletinSelect option {
+  color: #ffffff !important;
+  background-color: #24102c !important;
+}
+
+.bulletinSelect option:checked,
+.bulletinSelect option:hover,
+.bulletinSelect option:focus {
+  color: #ffffff !important;
+  background-color: #0e7490 !important;
+}
+
+.bulletinSelect:focus {
+  outline: none;
+  border-color: rgba(34, 211, 238, 0.9) !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18);
+}

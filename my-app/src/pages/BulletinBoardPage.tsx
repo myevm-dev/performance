@@ -92,20 +92,21 @@ export default function BulletinBoardPage() {
         <div className="cardHeader leaderboardHeader">
           <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
             <select
-              className="leaderboardHeaderAction"
-              value={importanceFilter}
-              onChange={(event) =>
-                setImportanceFilter(
-                  event.target.value as "all" | "High" | "Medium" | "Low"
-                )
-              }
-              aria-label="Filter by importance"
-            >
-              <option value="all">All Importance</option>
-              <option value="High">High Importance</option>
-              <option value="Medium">Medium Importance</option>
-              <option value="Low">Low Importance</option>
-            </select>
+  className="leaderboardHeaderAction bulletinSelect"
+  value={importanceFilter}
+  onChange={(event) =>
+    setImportanceFilter(
+      event.target.value as "all" | "High" | "Medium" | "Low"
+    )
+  }
+  aria-label="Filter by importance"
+  style={{ colorScheme: "dark" }}
+>
+  <option value="all">All Importance</option>
+  <option value="High">High Importance</option>
+  <option value="Medium">Medium Importance</option>
+  <option value="Low">Low Importance</option>
+</select>
           </div>
 
           <div className="leaderboardStoreSearchWrap">
