@@ -208,7 +208,7 @@ export default function BulletinBoardPage() {
 
   return (
     <main className="container">
-      <div className="card">
+      <div className="card bulletinBoardCard">
         <div className="cardHeader leaderboardHeader">
           <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
             <select

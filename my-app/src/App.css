@@ -1340,3 +1340,138 @@ html[data-theme="light"] .panelTitle {
   outline: 2px solid rgba(34, 211, 238, 0.7);
   outline-offset: -2px;
 }
+
+@media (max-width: 760px) {
+  .bulletinBoardCard .cardHeader.leaderboardHeader {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 64px !important;
+    grid-template-areas:
+      "search button"
+      "filter filter" !important;
+    gap: 10px !important;
+    align-items: center !important;
+    padding: 14px !important;
+  }
+
+  .bulletinBoardCard .leaderboardStoreSearchWrap {
+    grid-area: search !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bulletinBoardCard .leaderboardStoreSearchInput {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 56px !important;
+  }
+
+  .bulletinBoardCard .leaderboardHeaderActionsRight {
+    grid-area: button !important;
+    display: flex !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    justify-content: flex-end !important;
+  }
+
+  .bulletinBoardCard .leaderboardHeaderActionsRight .leaderboardHeaderAction {
+    width: 64px !important;
+    min-width: 64px !important;
+    height: 56px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .bulletinBoardCard
+    .leaderboardHeaderActionsRight
+    .leaderboardHeaderAction
+    span:last-child {
+    display: none !important;
+  }
+
+  .bulletinBoardCard .leaderboardHeaderActionsLeft {
+    grid-area: filter !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bulletinBoardCard .bulletinSelect {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 56px !important;
+  }
+}
+
+
+
+@media (max-width: 760px) {
+  .contestBoardCard .cardHeader.leaderboardHeader {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 64px !important;
+    grid-template-areas:
+      "search button"
+      "filter filter" !important;
+    gap: 10px !important;
+    align-items: center !important;
+    padding: 14px !important;
+  }
+
+  .contestBoardCard .leaderboardStoreSearchWrap {
+    grid-area: search !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .contestBoardCard .leaderboardStoreSearchInput {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 56px !important;
+  }
+
+  .contestBoardCard .leaderboardHeaderActionsRight {
+    grid-area: button !important;
+    display: flex !important;
+    width: 64px !important;
+    min-width: 64px !important;
+    justify-content: flex-end !important;
+  }
+
+  .contestBoardCard .leaderboardHeaderActionsRight .leaderboardHeaderAction {
+    width: 64px !important;
+    min-width: 64px !important;
+    height: 56px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .contestBoardCard
+    .leaderboardHeaderActionsRight
+    .leaderboardHeaderAction
+    span:last-child {
+    display: none !important;
+  }
+
+  .contestBoardCard .leaderboardHeaderActionsLeft {
+    grid-area: filter !important;
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .contestBoardCard .leaderboardHeaderActionsLeft .leaderboardHeaderAction {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 56px !important;
+  }
+}
+
+
+@media (max-width: 760px) {
+  .contestBoardCard .table {
+    min-width: 920px;
+  }
+
+  .contestBoardCard .tableWrap {
+    overflow-x: auto;
+  }
+}

@@ -254,7 +254,7 @@ export default function ContestPage({
 
   return (
     <main className="container">
-      <div className="card">
+      <div className="card contestBoardCard">
         <div className="cardHeader leaderboardHeader">
           <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
             <select
