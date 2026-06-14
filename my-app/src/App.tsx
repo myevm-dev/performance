@@ -38,6 +38,24 @@ type StoreOption = {
   label: string
 }
 
+type LeaderboardSearchResult =
+  | {
+      type: "store"
+      id: string
+      storeNumber: string
+      label: string
+      subLabel: string
+    }
+  | {
+      type: "user"
+      id: string
+      code: string
+      name: string
+      storeNumber: string
+      storeName: string
+      subLabel: string
+    }
+
 type ThemeMode = "light" | "dark"
 
 function getInitialTheme(): ThemeMode {
@@ -421,6 +439,15 @@ function LeaderboardApp({
 
   const [leaderboardSearch, setLeaderboardSearch] = useState("")
   const [leaderboardSearchFocused, setLeaderboardSearchFocused] = useState(false)
+  const [staffSearchRows, setStaffSearchRows] = useState<
+    Array<{
+      id: string
+      code: string
+      name: string
+      storeNumber: string
+      storeName: string
+    }>
+  >([])
 
   const [scoreOpen, setScoreOpen] = useState(false)
   const [selectedScoreServer, setSelectedScoreServer] = useState<{
@@ -450,20 +477,49 @@ function LeaderboardApp({
 
   const isHomeStore = homeStore === activeStore
 
-  const filteredLeaderboardStores = useMemo(() => {
-    const queryText = leaderboardSearch.toLowerCase().trim()
+  const filteredLeaderboardResults = useMemo<LeaderboardSearchResult[]>(() => {
+  const queryText = leaderboardSearch.toLowerCase().trim()
 
-    if (!queryText) return []
+  if (!queryText) return []
 
-    return storesList
-      .filter((store) => {
-        return (
-          store.storeNumber.toLowerCase().includes(queryText) ||
-          store.label.toLowerCase().includes(queryText)
-        )
-      })
-      .slice(0, 8)
-  }, [leaderboardSearch, storesList])
+  const storeResults: LeaderboardSearchResult[] = storesList
+    .filter((store) => {
+      return (
+        store.storeNumber.toLowerCase().includes(queryText) ||
+        store.label.toLowerCase().includes(queryText)
+      )
+    })
+    .slice(0, 6)
+    .map((store) => ({
+      type: "store",
+      id: store.id,
+      storeNumber: store.storeNumber,
+      label: store.label,
+      subLabel: `Store #${store.storeNumber}`,
+    }))
+
+  const userResults: LeaderboardSearchResult[] = staffSearchRows
+    .filter((staff) => {
+      return (
+        staff.name.toLowerCase().includes(queryText) ||
+        staff.code.toLowerCase().includes(queryText) ||
+        staff.storeNumber.toLowerCase().includes(queryText) ||
+        staff.storeName.toLowerCase().includes(queryText)
+      )
+    })
+    .slice(0, 8)
+    .map((staff) => ({
+      type: "user",
+      id: staff.id,
+      code: staff.code,
+      name: staff.name,
+      storeNumber: staff.storeNumber,
+      storeName: staff.storeName,
+      subLabel: `${staff.storeName} · #${staff.storeNumber}`,
+    }))
+
+  return [...storeResults, ...userResults].slice(0, 12)
+}, [leaderboardSearch, storesList, staffSearchRows])
 
   const handlePrintLeaderboard = () => {
     window.print()
@@ -488,6 +544,12 @@ function LeaderboardApp({
     setViewedStore(store.storeNumber)
     setLeaderboardSearch("")
     setLeaderboardSearchFocused(false)
+  }
+
+  const handleSelectLeaderboardUser = (user: Extract<LeaderboardSearchResult, { type: "user" }>) => {
+    setLeaderboardSearch("")
+    setLeaderboardSearchFocused(false)
+    navigate(`/profile/${user.code}`)
   }
 
   useEffect(() => {
@@ -653,6 +715,49 @@ function LeaderboardApp({
     }
   }, [])
 
+  useEffect(() => {
+  let alive = true
+
+  ;(async () => {
+    try {
+      const snap = await getDocs(collection(db, "staffUsers"))
+
+      const rows = snap.docs
+        .map((docSnap) => {
+          const data = docSnap.data() as {
+            code?: string
+            name?: string
+            storeNumber?: string
+          }
+
+          const code = String(data.code ?? docSnap.id)
+          const storeNumber = String(data.storeNumber ?? "")
+
+          const storeName =
+            localStores.find((store) => store.storeNumber === storeNumber)?.name ??
+            `Store ${storeNumber}`
+
+          return {
+            id: docSnap.id,
+            code,
+            name: data.name ?? "Unnamed",
+            storeNumber,
+            storeName,
+          }
+        })
+        .filter((row) => row.code && row.storeNumber)
+
+      if (alive) setStaffSearchRows(rows)
+    } catch (err) {
+      console.error("Failed to load staff search rows:", err)
+    }
+  })()
+
+  return () => {
+    alive = false
+  }
+}, [])
+
   const leaderboard = useMemo(() => {
     return servers
       .map((server) => ({
@@ -732,30 +837,44 @@ function LeaderboardApp({
                 value={leaderboardSearch}
                 onChange={(e) => setLeaderboardSearch(e.target.value)}
                 onFocus={() => setLeaderboardSearchFocused(true)}
-                placeholder={`Search stores`}
+                placeholder="Search stores or servers"
                 className="leaderboardStoreSearchInput"
               />
 
-              {leaderboardSearchFocused && filteredLeaderboardStores.length > 0 ? (
+              {leaderboardSearchFocused && filteredLeaderboardResults.length > 0 ? (
                 <div className="leaderboardStoreSearchResults">
-                  {filteredLeaderboardStores.map((store, idx) => (
+                  {filteredLeaderboardResults.map((result, idx) => (
                     <button
-                      key={store.id}
+                      key={`${result.type}-${result.id}`}
                       type="button"
                       onMouseDown={(e) => {
                         e.preventDefault()
-                        handleSelectLeaderboardStore(store)
+
+                        if (result.type === "store") {
+                          handleSelectLeaderboardStore({
+                            id: result.id,
+                            storeNumber: result.storeNumber,
+                            label: result.label,
+                          })
+                        } else {
+                          handleSelectLeaderboardUser(result)
+                        }
                       }}
                       className="leaderboardStoreSearchResult"
                       style={{
                         borderBottom:
-                          idx === filteredLeaderboardStores.length - 1
+                          idx === filteredLeaderboardResults.length - 1
                             ? "none"
                             : "1px solid var(--stroke)",
                       }}
                     >
-                      <span>{store.label}</span>
-                      <small>#{store.storeNumber}</small>
+                      <span>
+                        {result.type === "store" ? result.label : result.name}
+                      </span>
+
+                      <small>
+                        {result.type === "store" ? result.subLabel : result.subLabel}
+                      </small>
                     </button>
                   ))}
                 </div>
