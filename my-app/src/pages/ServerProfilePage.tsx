@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
 import {
   collection,
   getDocs,
-  limit,
-  orderBy,
+
   query,
   where,
 } from "firebase/firestore"
@@ -13,6 +12,12 @@ import GuestEngagementSection, {
   type GuestActivityRow,
 } from "../components/GuestEngagementSection"
 import { stores } from "../data/stores"
+
+type EngagementTooltipState = {
+  x: number
+  y: number
+  bar: EngagementWeeklyBar
+} | null
 
 
 type ServerProfile = {
@@ -42,6 +47,47 @@ type ServerProfilePageProps = {
   onBack: () => void
 }
 type BadaWindow = "all" | "12w" | "4w"
+
+type EngagementWeeklyBar = {
+  key: string
+  label: string
+  reviews: number
+  rewards: number
+  total: number
+  startMs: number
+}
+
+type GuestEngagementSummary = {
+  lifetimeReviews: number
+  lifetimeRewards: number
+  weeklyBars: EngagementWeeklyBar[]
+}
+
+function getWeekStartForChart(date: Date) {
+  const d = new Date(date)
+  d.setHours(0, 0, 0, 0)
+
+  const day = d.getDay()
+  const diff = (day - 4 + 7) % 7 // Thu start
+  d.setDate(d.getDate() - diff)
+
+  return d
+}
+
+function formatChartDate(date: Date) {
+  return date.toLocaleDateString(undefined, {
+    month: "numeric",
+    day: "numeric",
+  })
+}
+
+function emptyGuestEngagementSummary(): GuestEngagementSummary {
+  return {
+    lifetimeReviews: 0,
+    lifetimeRewards: 0,
+    weeklyBars: [],
+  }
+}
 
 function formatMoney(value?: number) {
   return `$${(value ?? 0).toLocaleString(undefined, {
@@ -105,31 +151,82 @@ function eventToType(event?: string): "Review" | "Rewards" {
   return "Review"
 }
 
-async function fetchGuestActivity(storeNumber: string, staffId: string) {
+async function fetchGuestEngagement(storeNumber: string, staffId: string) {
   const clicksRef = collection(db, "stores", storeNumber, "uniqueClicks")
 
-  const q = query(
-    clicksRef,
-    where("staffId", "==", staffId),
-    orderBy("createdAt", "desc"),
-    limit(50)
-  )
-
+  const q = query(clicksRef, where("staffId", "==", staffId))
   const snap = await getDocs(q)
 
-  return snap.docs.map((doc) => {
-    const data = doc.data()
+  const weeklyMap = new Map<string, EngagementWeeklyBar>()
+  let lifetimeReviews = 0
+  let lifetimeRewards = 0
+
+  const allRows = snap.docs.map((docSnap) => {
+    const data = docSnap.data()
     const type = eventToType(data.event)
+    const createdAt = data.createdAt ?? null
+
+    if (type === "Review") lifetimeReviews += 1
+    if (type === "Rewards") lifetimeRewards += 1
+
+    try {
+      const date = createdAt?.toDate?.()
+
+      if (date) {
+        const weekStart = getWeekStartForChart(date)
+        const key = weekStart.toISOString().slice(0, 10)
+
+        const existing =
+          weeklyMap.get(key) ??
+          {
+            key,
+            label: formatChartDate(weekStart),
+            reviews: 0,
+            rewards: 0,
+            total: 0,
+            startMs: weekStart.getTime(),
+          }
+
+        if (type === "Review") existing.reviews += 1
+        if (type === "Rewards") existing.rewards += 1
+
+        existing.total = existing.reviews + existing.rewards
+        weeklyMap.set(key, existing)
+      }
+    } catch {
+      // ignore malformed dates
+    }
 
     return {
-      id: doc.id,
+      id: docSnap.id,
       type,
       label: type === "Review" ? "Google review click" : "Rewards signup click",
-      createdAt: data.createdAt ?? null,
+      createdAt,
       weekKey: data.weekKey,
       weekOfYear: data.weekOfYear,
     } satisfies GuestActivityRow
   })
+
+  const rows = allRows
+    .sort((a, b) => {
+      const aMs = a.createdAt?.toMillis?.() ?? 0
+      const bMs = b.createdAt?.toMillis?.() ?? 0
+      return bMs - aMs
+    })
+    .slice(0, 50)
+
+  const weeklyBars = Array.from(weeklyMap.values())
+    .sort((a, b) => a.startMs - b.startMs)
+    .slice(-12)
+
+  return {
+    rows,
+    summary: {
+      lifetimeReviews,
+      lifetimeRewards,
+      weeklyBars,
+    },
+  }
 }
 
 function buildBadaBars(
@@ -369,6 +466,439 @@ function ScoreBreakdownModal({
   )
 }
 
+function GuestEngagementLifetimeChart({
+  summary,
+}: {
+  summary: GuestEngagementSummary
+}) {
+  const bars = summary.weeklyBars
+  const lifetimeTotal = summary.lifetimeReviews + summary.lifetimeRewards
+
+  const chartWrapRef = useRef<HTMLDivElement | null>(null)
+  const [tooltip, setTooltip] = useState<EngagementTooltipState>(null)
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
+
+  const svgWidth = 1000
+  const svgHeight = 285
+  const padLeft = 52
+  const padRight = 24
+  const padTop = 20
+  const padBottom = 56
+  const plotWidth = svgWidth - padLeft - padRight
+  const plotHeight = svgHeight - padTop - padBottom
+
+  const maxValue = Math.max(1, ...bars.map((bar) => bar.total))
+
+  const ticks = [
+    maxValue,
+    Math.ceil(maxValue * 0.75),
+    Math.ceil(maxValue * 0.5),
+    Math.ceil(maxValue * 0.25),
+    0,
+  ].filter((value, index, arr) => arr.indexOf(value) === index)
+
+  const getY = (value: number) => {
+    return padTop + ((maxValue - value) / maxValue) * plotHeight
+  }
+
+  const getX = (index: number) => {
+    if (bars.length <= 1) return padLeft + plotWidth / 2
+    return padLeft + (index / (bars.length - 1)) * plotWidth
+  }
+
+  const baseBarWidth =
+    bars.length <= 4 ? 44 : bars.length <= 8 ? 34 : 28
+
+  function showTooltip(
+    clientX: number,
+    clientY: number,
+    bar: EngagementWeeklyBar
+  ) {
+    const wrap = chartWrapRef.current
+    if (!wrap) return
+
+    const rect = wrap.getBoundingClientRect()
+    const tooltipWidth = 180
+    const tooltipHeight = 126
+
+    let x = clientX - rect.left + 14
+    let y = clientY - rect.top - 14
+
+    if (x + tooltipWidth > rect.width - 8) {
+      x = rect.width - tooltipWidth - 8
+    }
+
+    if (x < 8) x = 8
+
+    if (y + tooltipHeight > rect.height - 8) {
+      y = rect.height - tooltipHeight - 8
+    }
+
+    if (y < 8) y = 8
+
+    setTooltip({ x, y, bar })
+  }
+
+  return (
+    <section
+      className="card profileGuestLifetimeCard"
+      style={{
+        gridColumn: "1 / -1",
+        marginTop: 0,
+        overflow: "hidden",
+      }}
+    >
+      <div className="cardHeader">
+        <div>
+          <div className="cardTitle">Guest Engagement Trend</div>
+          <div className="cardSub">
+            Lifetime totals and weekly review/rewards clicks for this server
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="profileGuestLifetimeStats"
+        style={{
+          padding: 18,
+          display: "grid",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+          gap: 12,
+        }}
+      >
+        <StatCard
+          label="Lifetime Reviews"
+          value={String(summary.lifetimeReviews)}
+          accent="#19c37d"
+          sub="All counted review clicks"
+        />
+
+        <StatCard
+          label="Lifetime Rewards"
+          value={String(summary.lifetimeRewards)}
+          accent="#7c5cff"
+          sub="All counted rewards clicks"
+        />
+
+        <StatCard
+          label="Lifetime Total"
+          value={String(lifetimeTotal)}
+          accent="#2563eb"
+          sub="Reviews plus rewards"
+        />
+      </div>
+
+      <div style={{ padding: "0 18px 18px" }}>
+        <div
+          style={{
+            borderRadius: 20,
+            border: "1px solid var(--stroke)",
+            background:
+              "linear-gradient(180deg, rgba(37,99,235,0.03), rgba(139,92,246,0.03)), color-mix(in srgb, var(--card2) 42%, transparent)",
+            padding: 14,
+            overflow: "hidden",
+          }}
+        >
+          {bars.length > 0 ? (
+            <div
+              ref={chartWrapRef}
+              style={{
+                width: "100%",
+                overflowX: "auto",
+                overflowY: "hidden",
+                position: "relative",
+                scrollbarGutter: "stable",
+              }}
+            >
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                style={{
+                  width: "100%",
+                  minWidth: 720,
+                  height: "auto",
+                  display: "block",
+                }}
+                shapeRendering="geometricPrecision"
+                textRendering="geometricPrecision"
+              >
+                {ticks.map((tick) => {
+                  const y = getY(tick)
+
+                  return (
+                    <g key={tick}>
+                      <line
+                        x1={padLeft}
+                        x2={svgWidth - padRight}
+                        y1={y}
+                        y2={y}
+                        stroke="rgba(148,163,184,0.24)"
+                        strokeWidth="1"
+                        strokeDasharray="4 7"
+                      />
+
+                      <text
+                        x={8}
+                        y={y + 4}
+                        fontSize="12"
+                        fontWeight="800"
+                        fill="var(--muted)"
+                      >
+                        {tick}
+                      </text>
+                    </g>
+                  )
+                })}
+
+                {bars.map((bar, index) => {
+                  const isActive = hoveredKey === bar.key
+                  const currentBarWidth = baseBarWidth
+                  const x = getX(index) - currentBarWidth / 2
+                  const centerX = x + currentBarWidth / 2
+                  const isNewestWeek = index === bars.length - 1
+
+                  const reviewHeight = (bar.reviews / maxValue) * plotHeight
+                  const rewardHeight = (bar.rewards / maxValue) * plotHeight
+                  const reviewY = padTop + plotHeight - reviewHeight
+                  const rewardY = reviewY - rewardHeight
+
+                  return (
+                    <g
+                      key={bar.key}
+                      style={{ cursor: "pointer" }}
+                      onMouseEnter={(e) => {
+                        setHoveredKey(bar.key)
+                        showTooltip(e.clientX, e.clientY, bar)
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredKey(null)
+                        setTooltip(null)
+                      }}
+                    >
+                      <line
+                        x1={centerX}
+                        x2={centerX}
+                        y1={padTop}
+                        y2={svgHeight - padBottom}
+                        stroke={
+                          isActive
+                            ? "rgba(37,99,235,0.14)"
+                            : "rgba(148,163,184,0.08)"
+                        }
+                        strokeWidth="1"
+                      />
+
+                      {bar.reviews > 0 ? (
+                        <rect
+                          x={x}
+                          y={reviewY}
+                          width={currentBarWidth}
+                          height={reviewHeight}
+                          rx="8"
+                          fill="#19c37d"
+                          style={{
+                            filter: isActive
+                              ? "drop-shadow(0 8px 16px rgba(25,195,125,0.28))"
+                              : "drop-shadow(0 5px 10px rgba(25,195,125,0.16))",
+                            opacity: isActive ? 1 : 0.96,
+                            transition: "opacity 160ms ease, filter 160ms ease",
+                          }}
+                        />
+                      ) : null}
+
+                      {bar.rewards > 0 ? (
+                        <rect
+                          x={x}
+                          y={rewardY}
+                          width={currentBarWidth}
+                          height={rewardHeight}
+                          rx="8"
+                          fill="#7c5cff"
+                          style={{
+                            filter: isActive
+                              ? "drop-shadow(0 6px 14px rgba(124,92,255,0.28))"
+                              : "drop-shadow(0 4px 8px rgba(124,92,255,0.16))",
+                            opacity: isActive ? 1 : 0.96,
+                            transition: "opacity 160ms ease, filter 160ms ease",
+                          }}
+                        />
+                      ) : null}
+
+                      <text
+                        x={centerX}
+                        y={svgHeight - (isNewestWeek ? 28 : 16)}
+                        textAnchor="middle"
+                        fontSize="12"
+                        fontWeight={isActive ? "950" : "850"}
+                        fill={isActive ? "var(--text)" : "var(--muted)"}
+                      >
+                        {bar.label}
+                      </text>
+
+                      {isNewestWeek ? (
+                        <g>
+                          <rect
+                            x={centerX - 20}
+                            y={svgHeight - 22}
+                            width="40"
+                            height="17"
+                            rx="8.5"
+                            fill="rgba(25,195,125,0.14)"
+                            stroke="rgba(25,195,125,0.35)"
+                          />
+
+                          <circle
+                            cx={centerX - 11}
+                            cy={svgHeight - 13.5}
+                            r="3"
+                            fill="#19c37d"
+                          />
+
+                          <text
+                            x={centerX + 6}
+                            y={svgHeight - 9.5}
+                            textAnchor="middle"
+                            fontSize="9"
+                            fontWeight="950"
+                            fill="#19c37d"
+                            letterSpacing="0.5"
+                          >
+                            LIVE
+                          </text>
+                        </g>
+                      ) : null}
+                    </g>
+                  )
+                })}
+              </svg>
+
+              {tooltip ? (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: tooltip.x,
+                    top: tooltip.y,
+                    width: 180,
+                    pointerEvents: "none",
+                    borderRadius: 16,
+                    border: "1px solid rgba(148,163,184,0.24)",
+                    background:
+                      "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96))",
+                    boxShadow: "0 18px 40px rgba(15,23,42,0.18)",
+                    padding: 12,
+                    zIndex: 5,
+                    backdropFilter: "blur(10px)",
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 950,
+                      color: "#0f172a",
+                      marginBottom: 10,
+                    }}
+                  >
+                    Week of {tooltip.bar.label}
+                  </div>
+
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        fontSize: 13,
+                      }}
+                    >
+                      <span style={{ color: "#059669", fontWeight: 800 }}>
+                        Reviews
+                      </span>
+                      <span style={{ color: "#0f172a", fontWeight: 950 }}>
+                        {tooltip.bar.reviews}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        fontSize: 13,
+                      }}
+                    >
+                      <span style={{ color: "#7c3aed", fontWeight: 800 }}>
+                        Rewards
+                      </span>
+                      <span style={{ color: "#0f172a", fontWeight: 950 }}>
+                        {tooltip.bar.rewards}
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        height: 1,
+                        background: "rgba(148,163,184,0.18)",
+                        margin: "2px 0",
+                      }}
+                    />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        fontSize: 13,
+                      }}
+                    >
+                      <span style={{ color: "#334155", fontWeight: 900 }}>
+                        Total
+                      </span>
+                      <span style={{ color: "#0f172a", fontWeight: 950 }}>
+                        {tooltip.bar.total}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <div
+              style={{
+                minHeight: 190,
+                display: "grid",
+                placeItems: "center",
+                color: "var(--muted)",
+                fontWeight: 900,
+              }}
+            >
+              No engagement history found for this server yet.
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "center",
+            gap: 14,
+            flexWrap: "wrap",
+            fontSize: 12,
+            color: "var(--muted)",
+            fontWeight: 900,
+          }}
+        >
+          <span>
+            <span style={{ color: "#19c37d" }}>■</span> Reviews
+          </span>
+          <span>
+            <span style={{ color: "#7c5cff" }}>■</span> Rewards
+          </span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function ServerProfilePage({
   server,
   servers,
@@ -381,6 +911,9 @@ export default function ServerProfilePage({
   const [activityRows, setActivityRows] = useState<GuestActivityRow[]>([])
   const [activityLoading, setActivityLoading] = useState(false)
   const [isMobileChart, setIsMobileChart] = useState(false)
+
+  const [engagementSummary, setEngagementSummary] =
+  useState<GuestEngagementSummary>(emptyGuestEngagementSummary())
   const serverId = server?.code ?? server?.staffId ?? server?.id ?? ""
   const serverStoreNumber = server?.storeNumber ?? ""
   const currentStore = stores.find(
@@ -458,41 +991,44 @@ export default function ServerProfilePage({
   }, [activityRows, activityFilter])
 
   useEffect(() => {
-    if (!serverStoreNumber || !serverId) {
-      setActivityRows([])
-      return
-    }
+  if (!serverStoreNumber || !serverId) {
+    setActivityRows([])
+    setEngagementSummary(emptyGuestEngagementSummary())
+    return
+  }
 
-    let cancelled = false
+  let cancelled = false
 
-    async function loadActivity() {
-      setActivityLoading(true)
+  async function loadActivity() {
+    setActivityLoading(true)
 
-      try {
-        const rows = await fetchGuestActivity(serverStoreNumber, serverId)
+    try {
+      const result = await fetchGuestEngagement(serverStoreNumber, serverId)
 
-        if (!cancelled) {
-          setActivityRows(rows)
-        }
-      } catch (error) {
-        console.error("Failed to load guest activity", error)
+      if (!cancelled) {
+        setActivityRows(result.rows)
+        setEngagementSummary(result.summary)
+      }
+    } catch (error) {
+      console.error("Failed to load guest activity", error)
 
-        if (!cancelled) {
-          setActivityRows([])
-        }
-      } finally {
-        if (!cancelled) {
-          setActivityLoading(false)
-        }
+      if (!cancelled) {
+        setActivityRows([])
+        setEngagementSummary(emptyGuestEngagementSummary())
+      }
+    } finally {
+      if (!cancelled) {
+        setActivityLoading(false)
       }
     }
+  }
 
-    loadActivity()
+  loadActivity()
 
-    return () => {
-      cancelled = true
-    }
-  }, [serverStoreNumber, serverId])
+  return () => {
+    cancelled = true
+  }
+}, [serverStoreNumber, serverId])
 
   useEffect(() => {
   const checkMobile = () => {
@@ -1153,6 +1689,8 @@ const padBottom = isMobileChart ? 42 : 58
               </div>
             </section>
           </div>
+
+          <GuestEngagementLifetimeChart summary={engagementSummary} />
 
           <GuestEngagementSection
             reviews={reviews}

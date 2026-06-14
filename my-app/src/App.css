@@ -1475,3 +1475,15 @@ html[data-theme="light"] .panelTitle {
     overflow-x: auto;
   }
 }
+
+
+@media (max-width: 720px) {
+  .profileGuestLifetimeStats {
+    grid-template-columns: 1fr !important;
+    padding: 12px !important;
+  }
+
+  .profileGuestLifetimeCard svg {
+    min-width: 620px !important;
+  }
+}
