@@ -63,6 +63,11 @@ function getInitialTheme(): ThemeMode {
   return saved === "dark" || saved === "light" ? saved : "light"
 }
 
+function normalizeStoreNumber(value?: string | null) {
+  if (!value) return ""
+  return String(value).padStart(4, "0")
+}
+
 function getPromoPenaltyColor(promoRate: number) {
   if (promoRate <= 0.002) return "rgba(105, 213, 118, 0.92)"
   if (promoRate <= 0.003) return "#fca5a5"
@@ -191,6 +196,7 @@ function ServerProfileRoute({
 }) {
   const { staffCode } = useParams()
   const navigate = useNavigate()
+
 
   const [server, setServer] = useState<any | null>(null)
   const [profileServers, setProfileServers] = useState<ProfileRankServer[]>([])
@@ -425,6 +431,7 @@ function LeaderboardApp({
   setTheme: (theme: ThemeMode) => void
 }) {
   const navigate = useNavigate()
+  const { storeNumber: routeStoreNumber } = useParams()
 
   const [infoOpen, setInfoOpen] = useState(false)
   const [clicksOpen, setClicksOpen] = useState(false)
@@ -432,7 +439,13 @@ function LeaderboardApp({
   const [selectedStaffName, setSelectedStaffName] = useState("")
   const [storesList, setStoresList] = useState<StoreOption[]>([])
   const [homeStore, setHomeStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
-  const [viewedStore, setViewedStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
+  const [viewedStore, setViewedStore] = useState<string>(() => {
+  const routeStore = normalizeStoreNumber(routeStoreNumber)
+
+  if (routeStore) return routeStore
+
+  return localStorage.getItem("homeStore") ?? ""
+})
   const [storePickerOpen, setStorePickerOpen] = useState(() => !localStorage.getItem("homeStore"))
   const [storeSearch, setStoreSearch] = useState("")
   const [selectedStore, setSelectedStore] = useState<string>(() => localStorage.getItem("homeStore") ?? "")
@@ -474,6 +487,15 @@ function LeaderboardApp({
     localStores.find((s) => s.storeNumber === activeStore)?.name ??
     storesList.find((s) => s.storeNumber === activeStore)?.label ??
     `Store ${activeStore}`
+
+  useEffect(() => {
+    const routeStore = normalizeStoreNumber(routeStoreNumber)
+
+    if (!routeStore) return
+
+    setViewedStore(routeStore)
+    localStorage.setItem("viewedStore", routeStore)
+  }, [routeStoreNumber])
 
   const isHomeStore = homeStore === activeStore
 
@@ -1127,6 +1149,11 @@ export default function App() {
     <Routes>
       <Route
         path="/"
+        element={<LeaderboardApp theme={theme} setTheme={setTheme} />}
+      />
+
+      <Route
+        path="/leaderboard/:storeNumber"
         element={<LeaderboardApp theme={theme} setTheme={setTheme} />}
       />
 
