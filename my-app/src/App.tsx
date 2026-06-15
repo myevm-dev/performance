@@ -488,6 +488,8 @@ function LeaderboardApp({
     storesList.find((s) => s.storeNumber === activeStore)?.label ??
     `Store ${activeStore}`
 
+  const activeStoreLogo = getStoreLogoUrl(activeStore)
+
   useEffect(() => {
     const routeStore = normalizeStoreNumber(routeStoreNumber)
 
@@ -801,9 +803,36 @@ function LeaderboardApp({
             Team Leaderboard
           </h1>
 
-          <div className="heroStoreName">
-            {activeStoreName}
-          </div>
+          <div
+  className="heroStoreName"
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  }}
+>
+  <img
+    src={activeStoreLogo}
+    alt={activeStoreName}
+    style={{
+      width: 86,
+      height: 86,
+      borderRadius: "999px",
+      objectFit: "cover",
+      border: "2px solid var(--stroke)",
+      background: "var(--card)",
+      boxShadow: "0 14px 32px rgba(0,0,0,0.18)",
+    }}
+    onError={(event) => {
+      event.currentTarget.src =
+        "https://www.daytadna.com/storelogos/Fallback.png"
+    }}
+  />
+
+  <span>{activeStoreName}</span>
+</div>
 
           <p className="subtitle">
             Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last BADA refresh:{" "}
@@ -1098,6 +1127,17 @@ function LeaderboardApp({
       />
     </div>
   )
+}
+
+function getStoreLogoUrl(storeNumber: string) {
+  const store = localStores.find(
+    (store) => String(store.storeNumber) === String(storeNumber)
+  )
+
+  const storeName = store?.name ?? "Fallback"
+  const encodedName = encodeURIComponent(storeName)
+
+  return `https://www.daytadna.com/storelogos/${encodedName}.png`
 }
 
 function BulletinBoardRoute({
