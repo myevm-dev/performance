@@ -986,6 +986,25 @@ function LeaderboardApp({
               </div>
             </div>
 
+            <div
+              style={{
+                margin: "0 0 0 0",
+                padding: "10px 18px",
+                borderTop: "1px solid var(--stroke)",
+                borderBottom: "1px solid var(--stroke)",
+                background:
+                  "linear-gradient(90deg, rgba(37,99,235,0.12), rgba(201, 221, 128, 0.73), rgba(235, 255, 10, 0.1))",
+                color: "var(--text)",
+                fontSize: 13,
+                fontWeight: 800,
+                textAlign: "center",
+                letterSpacing: "0.01em",
+              }}
+            >
+              League Scoring is coming soon. Scores will transition from trailing three-week results to week-by-week scores used for store vs store matchups.
+            </div>
+
+
             <div className="tableWrap" aria-label="Leaderboard table scroll area">
               <table className="table">
                 <thead>
