@@ -626,12 +626,10 @@ html[data-theme="light"] .panelTitle {
 }
 
 .homeStoreResults {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  z-index: 20;
-  overflow: hidden;
+  position: relative;
+  margin-top: 8px;
+  max-height: 280px;
+  overflow-y: auto;
   border-radius: 14px;
   border: 1px solid var(--stroke2);
   background: var(--bg2);
