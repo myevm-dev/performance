@@ -59,6 +59,105 @@ type LeaderboardSearchResult =
 type ThemeMode = "light" | "dark"
 type LeaderboardView = "t21" | "donations" | "league"
 
+type DonationRow = {
+  name: string
+  amount: number
+}
+
+const DONATION_START = "2026-08-19"
+const DONATION_END = "2026-10-27"
+
+function parseTsv(text: string) {
+  const rows: string[][] = []
+  let row: string[] = []
+  let cell = ""
+  let quoted = false
+
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index]
+
+    if (character === '"') {
+      if (quoted && text[index + 1] === '"') {
+        cell += '"'
+        index += 1
+      } else {
+        quoted = !quoted
+      }
+    } else if (character === "\t" && !quoted) {
+      row.push(cell.trim())
+      cell = ""
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1
+      row.push(cell.trim())
+      if (row.some(Boolean)) rows.push(row)
+      row = []
+      cell = ""
+    } else {
+      cell += character
+    }
+  }
+
+  row.push(cell.trim())
+  if (row.some(Boolean)) rows.push(row)
+  return rows
+}
+
+function parseMoney(value: string) {
+  const negative = value.includes("(") && value.includes(")")
+  const amount = Number(value.replace(/[^0-9.-]/g, "")) || 0
+  return negative ? -Math.abs(amount) : amount
+}
+
+function extractDonations(fileText: string) {
+  const rows = parseTsv(fileText)
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
+
+  const repeatedReportRows = rows.flatMap((row) => {
+    const normalized = row.map(normalize)
+    const nameHeaderIndex = normalized.indexOf("name")
+    const excludedHeaderIndex = normalized.findIndex((header) =>
+      header.includes("excludednetsales")
+    )
+    const totalHeaderIndex = normalized.findIndex(
+      (header, index) => index > nameHeaderIndex && header === "total"
+    )
+
+    if (nameHeaderIndex < 0 || excludedHeaderIndex < 0 || totalHeaderIndex < 0) {
+      return []
+    }
+
+    const name = row[totalHeaderIndex + 1]?.trim()
+    const excludedNetSales = row[totalHeaderIndex + 4] ?? "0"
+
+    if (!name || /^total/i.test(name) || /^agent,?\s*olo$/i.test(name)) return []
+    return [{ name, amount: parseMoney(excludedNetSales) }]
+  })
+
+  if (repeatedReportRows.length > 0) return repeatedReportRows
+
+  const headerIndex = rows.findIndex((row) => {
+    const headers = row.map(normalize)
+    return (
+      headers.includes("name") &&
+      headers.some((header) => header.includes("excludednetsales"))
+    )
+  })
+
+  if (headerIndex < 0) return []
+
+  const headers = rows[headerIndex].map(normalize)
+  const nameIndex = headers.indexOf("name")
+  const donationIndex = headers.findIndex((header) =>
+    header.includes("excludednetsales")
+  )
+
+  return rows.slice(headerIndex + 1).flatMap((row) => {
+    const name = row[nameIndex]?.trim()
+    if (!name || /^total/i.test(name) || /^agent,?\s*olo$/i.test(name)) return []
+    return [{ name, amount: parseMoney(row[donationIndex] ?? "0") }]
+  })
+}
+
 function getInitialTheme(): ThemeMode {
   const saved = localStorage.getItem("app_theme")
   return saved === "dark" || saved === "light" ? saved : "light"
@@ -478,6 +577,9 @@ function LeaderboardApp({
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
   const [servers, setServers] = useState<ServerStats[]>([])
   const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>("t21")
+  const [donationRows, setDonationRows] = useState<DonationRow[]>([])
+  const [donationsLoading, setDonationsLoading] = useState(false)
+  const [donationsError, setDonationsError] = useState("")
 
   const activeStore = viewedStore || homeStore || "6909"
   useEffect(() => {
@@ -704,6 +806,62 @@ function LeaderboardApp({
   }, [activeStore])
 
   useEffect(() => {
+    if (leaderboardView !== "donations") return
+
+    let alive = true
+    setDonationsLoading(true)
+    setDonationsError("")
+
+    ;(async () => {
+      try {
+        const rawSnap = await getDocs(
+          collection(db, "stores", activeStore, "badaRawUploads")
+        )
+        const totals = new Map<string, DonationRow>()
+
+        rawSnap.docs.forEach((docSnap) => {
+          const data = docSnap.data() as {
+            fileText?: string
+            weekStartIso?: string
+            weekEndIso?: string
+          }
+
+          const weekStart = data.weekStartIso ?? docSnap.id
+          const weekEnd = data.weekEndIso ?? weekStart
+          const overlapsCompetition =
+            weekEnd >= DONATION_START && weekStart <= DONATION_END
+
+          if (!overlapsCompetition || !data.fileText) return
+
+          extractDonations(data.fileText).forEach((entry) => {
+            const key = entry.name.toLowerCase().trim()
+            const existing = totals.get(key)
+            totals.set(key, {
+              name: existing?.name ?? entry.name,
+              amount: (existing?.amount ?? 0) + entry.amount,
+            })
+          })
+        })
+
+        if (alive) {
+          setDonationRows(
+            Array.from(totals.values()).sort((a, b) => b.amount - a.amount)
+          )
+        }
+      } catch (error) {
+        console.error("Failed to load donation totals:", error)
+        if (alive) setDonationsError("Unable to load donation totals.")
+      } finally {
+        if (alive) setDonationsLoading(false)
+      }
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [activeStore, leaderboardView])
+
+  useEffect(() => {
     let alive = true
 
     ;(async () => {
@@ -844,7 +1002,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "t21" ? "active" : ""}`}
               onClick={() => setLeaderboardView("t21")}
             >
-              Trailing 21 Day
+              T21 Day
             </button>
             <button
               type="button"
@@ -853,7 +1011,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "donations" ? "active" : ""}`}
               onClick={() => setLeaderboardView("donations")}
             >
-              No Kids Hungry
+              Donations
             </button>
             <button
               type="button"
@@ -873,7 +1031,7 @@ function LeaderboardApp({
                 {lastBadaRefresh || "Not published yet"}
               </>
             ) : leaderboardView === "donations" ? (
-              "Donation rankings are coming soon."
+              "Competition runs Aug 19 through Oct 27, 2026 · Ranked by Excluded Net Sales"
             ) : (
               "League matchups are coming soon."
             )}
@@ -1131,10 +1289,53 @@ function LeaderboardApp({
           </>
         </div>
 
-        {leaderboardView !== "t21" && (
+        {leaderboardView === "donations" && (
+          <div className="card">
+            <div className="cardHeader">
+              <div>
+                <div className="cardTitle">Donation Leaderboard</div>
+                <div className="cardSub">Aug 19 through Oct 27, 2026</div>
+              </div>
+              <div className="donationTotal">
+                Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
+              </div>
+            </div>
+
+            {donationsLoading ? (
+              <div className="dashboardViewPlaceholderText donationStatus">Loading donations...</div>
+            ) : donationsError ? (
+              <div className="dashboardViewPlaceholderText donationStatus">{donationsError}</div>
+            ) : donationRows.length === 0 ? (
+              <div className="dashboardViewPlaceholderText donationStatus">No donation values found for this store yet.</div>
+            ) : (
+              <div className="tableWrap">
+                <table className="table donationTable">
+                  <thead>
+                    <tr>
+                      <th>Rank</th>
+                      <th>Server</th>
+                      <th style={{ textAlign: "right" }}>Donations</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {donationRows.map((row, index) => (
+                      <tr key={row.name} className={index === 0 ? "rowTop" : index === 1 ? "rowSecond" : index === 2 ? "rowThird" : ""}>
+                        <td><div className="rankPill">{index + 1}</div></td>
+                        <td><div className="nameCell">{row.name}</div></td>
+                        <td className="donationAmount">${row.amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {leaderboardView === "league" && (
           <div className="card dashboardViewPlaceholder">
             <div className="dashboardViewPlaceholderTitle">
-              {leaderboardView === "donations" ? "Donations" : "League Matchup"}
+              League Matchup
             </div>
             <div className="dashboardViewPlaceholderText">
               This view is ready for its data and layout.

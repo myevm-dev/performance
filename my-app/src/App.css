@@ -225,6 +225,22 @@ html[data-theme="light"] .heroStoreName {
   font-size: 13px;
 }
 
+.donationTotal {
+  color: var(--text);
+  font-weight: 900;
+}
+
+.donationStatus {
+  padding: 36px 20px;
+  text-align: center;
+}
+
+.donationAmount {
+  color: #22c55e;
+  font-weight: 900;
+  text-align: right;
+}
+
 /* Cards */
 .card {
   width: 100%;
