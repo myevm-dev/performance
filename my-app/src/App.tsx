@@ -853,7 +853,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "donations" ? "active" : ""}`}
               onClick={() => setLeaderboardView("donations")}
             >
-              No Kid Hungry Donations
+              No Kids Hungry
             </button>
             <button
               type="button"
