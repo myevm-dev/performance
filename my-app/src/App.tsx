@@ -57,6 +57,7 @@ type LeaderboardSearchResult =
     }
 
 type ThemeMode = "light" | "dark"
+type LeaderboardView = "t21" | "donations" | "league"
 
 function getInitialTheme(): ThemeMode {
   const saved = localStorage.getItem("app_theme")
@@ -476,6 +477,7 @@ function LeaderboardApp({
   const [changelogOpen, setChangelogOpen] = useState(false)
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
   const [servers, setServers] = useState<ServerStats[]>([])
+  const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>("t21")
 
   const activeStore = viewedStore || homeStore || "6909"
   useEffect(() => {
@@ -834,13 +836,51 @@ function LeaderboardApp({
   <span>{activeStoreName}</span>
 </div>
 
+          <div className="heroViewToggle" role="tablist" aria-label="Leaderboard view">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leaderboardView === "t21"}
+              className={`heroViewToggleButton ${leaderboardView === "t21" ? "active" : ""}`}
+              onClick={() => setLeaderboardView("t21")}
+            >
+              Trailing 21 Day
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leaderboardView === "donations"}
+              className={`heroViewToggleButton ${leaderboardView === "donations" ? "active" : ""}`}
+              onClick={() => setLeaderboardView("donations")}
+            >
+              No Kid Hungry Donations
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leaderboardView === "league"}
+              className={`heroViewToggleButton ${leaderboardView === "league" ? "active" : ""}`}
+              onClick={() => setLeaderboardView("league")}
+            >
+              League Matchup
+            </button>
+          </div>
+
           <p className="subtitle">
-            Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last BADA refresh:{" "}
-            {lastBadaRefresh || "Not published yet"}
+            {leaderboardView === "t21" ? (
+              <>
+                Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last BADA refresh:{" "}
+                {lastBadaRefresh || "Not published yet"}
+              </>
+            ) : leaderboardView === "donations" ? (
+              "Donation rankings are coming soon."
+            ) : (
+              "League matchups are coming soon."
+            )}
           </p>
         </div>
 
-        <div className="card">
+        <div className={`card ${leaderboardView !== "t21" ? "dashboardViewHidden" : ""}`}>
           <div className="cardHeader leaderboardHeader">
             <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
             
@@ -1090,6 +1130,17 @@ function LeaderboardApp({
             </div>
           </>
         </div>
+
+        {leaderboardView !== "t21" && (
+          <div className="card dashboardViewPlaceholder">
+            <div className="dashboardViewPlaceholderTitle">
+              {leaderboardView === "donations" ? "Donations" : "League Matchup"}
+            </div>
+            <div className="dashboardViewPlaceholderText">
+              This view is ready for its data and layout.
+            </div>
+          </div>
+        )}
       </main>
 
       <ScoringInfoModal
