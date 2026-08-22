@@ -1002,7 +1002,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "t21" ? "active" : ""}`}
               onClick={() => setLeaderboardView("t21")}
             >
-              T21 Day
+              Trailing 21 Day
             </button>
             <button
               type="button"
@@ -1011,7 +1011,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "donations" ? "active" : ""}`}
               onClick={() => setLeaderboardView("donations")}
             >
-              Donations
+              No Kids Hungry
             </button>
             <button
               type="button"
