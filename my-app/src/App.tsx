@@ -1342,7 +1342,7 @@ function LeaderboardApp({
               League Matchup
             </div>
             <div className="dashboardViewPlaceholderText">
-              This view is ready for its data and layout.
+              WIP.
             </div>
           </div>
         )}
