@@ -982,7 +982,7 @@ function LeaderboardApp({
           <p className="subtitle">
             {leaderboardView === "t21" ? (
               <>
-                Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last BADA refresh:{" "}
+                Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last Scorecard publish:{" "}
                 {lastBadaRefresh || "Not published yet"}
               </>
             ) : leaderboardView === "donations" ? (
