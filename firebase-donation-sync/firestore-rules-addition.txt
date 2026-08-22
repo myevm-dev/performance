@@ -1,0 +1,5 @@
+// Add this inside service cloud.firestore -> match /databases/{database}/documents
+match /stores/{storeNumber}/donationPublishedWeeks/{weekKey} {
+  allow read: if true;
+  allow create, update, delete: if false;
+}

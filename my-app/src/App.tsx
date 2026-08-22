@@ -62,101 +62,22 @@ type LeaderboardView = "t21" | "donations" | "league"
 type DonationRow = {
   name: string
   amount: number
+  weekly: Record<string, number>
 }
 
-const DONATION_START = "2026-08-19"
-const DONATION_END = "2026-10-27"
-
-function parseTsv(text: string) {
-  const rows: string[][] = []
-  let row: string[] = []
-  let cell = ""
-  let quoted = false
-
-  for (let index = 0; index < text.length; index += 1) {
-    const character = text[index]
-
-    if (character === '"') {
-      if (quoted && text[index + 1] === '"') {
-        cell += '"'
-        index += 1
-      } else {
-        quoted = !quoted
-      }
-    } else if (character === "\t" && !quoted) {
-      row.push(cell.trim())
-      cell = ""
-    } else if ((character === "\n" || character === "\r") && !quoted) {
-      if (character === "\r" && text[index + 1] === "\n") index += 1
-      row.push(cell.trim())
-      if (row.some(Boolean)) rows.push(row)
-      row = []
-      cell = ""
-    } else {
-      cell += character
-    }
-  }
-
-  row.push(cell.trim())
-  if (row.some(Boolean)) rows.push(row)
-  return rows
-}
-
-function parseMoney(value: string) {
-  const negative = value.includes("(") && value.includes(")")
-  const amount = Number(value.replace(/[^0-9.-]/g, "")) || 0
-  return negative ? -Math.abs(amount) : amount
-}
-
-function extractDonations(fileText: string) {
-  const rows = parseTsv(fileText)
-  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
-
-  const repeatedReportRows = rows.flatMap((row) => {
-    const normalized = row.map(normalize)
-    const nameHeaderIndex = normalized.indexOf("name")
-    const excludedHeaderIndex = normalized.findIndex((header) =>
-      header.includes("excludednetsales")
-    )
-    const totalHeaderIndex = normalized.findIndex(
-      (header, index) => index > nameHeaderIndex && header === "total"
-    )
-
-    if (nameHeaderIndex < 0 || excludedHeaderIndex < 0 || totalHeaderIndex < 0) {
-      return []
-    }
-
-    const name = row[totalHeaderIndex + 1]?.trim()
-    const excludedNetSales = row[totalHeaderIndex + 4] ?? "0"
-
-    if (!name || /^total/i.test(name) || /^agent,?\s*olo$/i.test(name)) return []
-    return [{ name, amount: parseMoney(excludedNetSales) }]
-  })
-
-  if (repeatedReportRows.length > 0) return repeatedReportRows
-
-  const headerIndex = rows.findIndex((row) => {
-    const headers = row.map(normalize)
-    return (
-      headers.includes("name") &&
-      headers.some((header) => header.includes("excludednetsales"))
-    )
-  })
-
-  if (headerIndex < 0) return []
-
-  const headers = rows[headerIndex].map(normalize)
-  const nameIndex = headers.indexOf("name")
-  const donationIndex = headers.findIndex((header) =>
-    header.includes("excludednetsales")
-  )
-
-  return rows.slice(headerIndex + 1).flatMap((row) => {
-    const name = row[nameIndex]?.trim()
-    if (!name || /^total/i.test(name) || /^agent,?\s*olo$/i.test(name)) return []
-    return [{ name, amount: parseMoney(row[donationIndex] ?? "0") }]
-  })
-}
+const DONATION_WEEKS = [
+  { key: "2026-08-13", label: "Aug 13–19*" },
+  { key: "2026-08-20", label: "Aug 20–26" },
+  { key: "2026-08-27", label: "Aug 27–Sep 2" },
+  { key: "2026-09-03", label: "Sep 3–9" },
+  { key: "2026-09-10", label: "Sep 10–16" },
+  { key: "2026-09-17", label: "Sep 17–23" },
+  { key: "2026-09-24", label: "Sep 24–30" },
+  { key: "2026-10-01", label: "Oct 1–7" },
+  { key: "2026-10-08", label: "Oct 8–14" },
+  { key: "2026-10-15", label: "Oct 15–21" },
+  { key: "2026-10-22", label: "Oct 22–28**" },
+] as const
 
 function getInitialTheme(): ThemeMode {
   const saved = localStorage.getItem("app_theme")
@@ -580,6 +501,8 @@ function LeaderboardApp({
   const [donationRows, setDonationRows] = useState<DonationRow[]>([])
   const [donationsLoading, setDonationsLoading] = useState(false)
   const [donationsError, setDonationsError] = useState("")
+  const [publishedDonationWeeks, setPublishedDonationWeeks] = useState<Set<string>>(new Set())
+  const [syncedDonationWeeks, setSyncedDonationWeeks] = useState<Set<string>>(new Set())
 
   const activeStore = viewedStore || homeStore || "6909"
   useEffect(() => {
@@ -814,43 +737,63 @@ function LeaderboardApp({
 
     ;(async () => {
       try {
-        const rawSnap = await getDocs(
-          collection(db, "stores", activeStore, "badaRawUploads")
-        )
+        const [publishedSnap, donationSnap] = await Promise.all([
+          getDocs(collection(db, "stores", activeStore, "badaPublishedWeeks")),
+          getDocs(collection(db, "stores", activeStore, "donationPublishedWeeks")),
+        ])
         const totals = new Map<string, DonationRow>()
+        const publishedWeeks = new Set<string>()
+        const syncedWeeks = new Set<string>()
+        const competitionWeekKeys = new Set<string>(
+          DONATION_WEEKS.map((week) => week.key)
+        )
 
-        rawSnap.docs.forEach((docSnap) => {
+        publishedSnap.docs.forEach((docSnap) => {
+          if (competitionWeekKeys.has(docSnap.id)) publishedWeeks.add(docSnap.id)
+        })
+
+        donationSnap.docs.forEach((docSnap) => {
+          if (!competitionWeekKeys.has(docSnap.id)) return
+
           const data = docSnap.data() as {
-            fileText?: string
-            weekStartIso?: string
-            weekEndIso?: string
+            rows?: Array<{
+              mappedName?: string
+              originalName?: string
+              excludedNetSales?: number
+            }>
           }
 
-          const weekStart = data.weekStartIso ?? docSnap.id
-          const weekEnd = data.weekEndIso ?? weekStart
-          const overlapsCompetition =
-            weekEnd >= DONATION_START && weekStart <= DONATION_END
+          syncedWeeks.add(docSnap.id)
 
-          if (!overlapsCompetition || !data.fileText) return
+          ;(data.rows ?? []).forEach((row) => {
+            const name = row.mappedName ?? row.originalName ?? "Unnamed"
+            const key = name.toLowerCase().trim()
+            const existing = totals.get(key) ?? { name, amount: 0, weekly: {} }
+            const amount = typeof row.excludedNetSales === "number" ? row.excludedNetSales : 0
 
-          extractDonations(data.fileText).forEach((entry) => {
-            const key = entry.name.toLowerCase().trim()
-            const existing = totals.get(key)
             totals.set(key, {
-              name: existing?.name ?? entry.name,
-              amount: (existing?.amount ?? 0) + entry.amount,
+              name: existing.name,
+              amount: existing.amount + amount,
+              weekly: {
+                ...existing.weekly,
+                ...(typeof row.excludedNetSales === "number"
+                  ? { [docSnap.id]: row.excludedNetSales }
+                  : {}),
+              },
             })
           })
         })
 
         if (alive) {
+          setPublishedDonationWeeks(publishedWeeks)
+          setSyncedDonationWeeks(syncedWeeks)
           setDonationRows(
             Array.from(totals.values()).sort((a, b) => b.amount - a.amount)
           )
         }
       } catch (error) {
         console.error("Failed to load donation totals:", error)
-        if (alive) setDonationsError("Unable to load donation totals.")
+        if (alive) setDonationsError("Unable to load published donation data.")
       } finally {
         if (alive) setDonationsLoading(false)
       }
@@ -1306,7 +1249,7 @@ function LeaderboardApp({
             ) : donationsError ? (
               <div className="dashboardViewPlaceholderText donationStatus">{donationsError}</div>
             ) : donationRows.length === 0 ? (
-              <div className="dashboardViewPlaceholderText donationStatus">No donation values found for this store yet.</div>
+              <div className="dashboardViewPlaceholderText donationStatus">No published server rows are available for the competition weeks yet.</div>
             ) : (
               <div className="tableWrap">
                 <table className="table donationTable">
@@ -1314,6 +1257,9 @@ function LeaderboardApp({
                     <tr>
                       <th>Rank</th>
                       <th>Server</th>
+                      {DONATION_WEEKS.map((week) => (
+                        <th key={week.key} style={{ textAlign: "right" }}>{week.label}</th>
+                      ))}
                       <th style={{ textAlign: "right" }}>Donations</th>
                     </tr>
                   </thead>
@@ -1322,6 +1268,17 @@ function LeaderboardApp({
                       <tr key={row.name} className={index === 0 ? "rowTop" : index === 1 ? "rowSecond" : index === 2 ? "rowThird" : ""}>
                         <td><div className="rankPill">{index + 1}</div></td>
                         <td><div className="nameCell">{row.name}</div></td>
+                        {DONATION_WEEKS.map((week) => {
+                          const isPublished = publishedDonationWeeks.has(week.key)
+                          const isSynced = syncedDonationWeeks.has(week.key)
+                          const amount = row.weekly[week.key]
+
+                          return (
+                            <td key={week.key} className="donationWeekAmount">
+                              {!isPublished ? "—" : !isSynced ? "Sync" : `$${(amount ?? 0).toFixed(2)}`}
+                            </td>
+                          )
+                        })}
                         <td className="donationAmount">${row.amount.toFixed(2)}</td>
                       </tr>
                     ))}
@@ -1329,6 +1286,9 @@ function LeaderboardApp({
                 </table>
               </div>
             )}
+            <div className="donationFootnote">
+              * Competition begins Wednesday, Aug 19. ** Competition ends Tuesday, Oct 27. “Sync” means that published week still needs Excluded Net Sales added from its stored raw upload.
+            </div>
           </div>
         )}
 
