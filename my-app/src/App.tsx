@@ -576,6 +576,18 @@ function LeaderboardApp({
     window.print()
   }
 
+  const handlePrintDonations = () => {
+    const printClass = "printDonations"
+    const cleanup = () => document.body.classList.remove(printClass)
+
+    document.body.classList.add(printClass)
+    window.addEventListener("afterprint", cleanup, { once: true })
+    window.print()
+
+    // Covers browsers that do not fire afterprint reliably.
+    window.setTimeout(cleanup, 1000)
+  }
+
   const handleSaveHomeStore = () => {
     if (!selectedStore) return
 
@@ -945,7 +957,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "t21" ? "active" : ""}`}
               onClick={() => setLeaderboardView("t21")}
             >
-              Trailing 21 Day
+              Trailing 21D Avg
             </button>
             <button
               type="button"
@@ -1233,14 +1245,46 @@ function LeaderboardApp({
         </div>
 
         {leaderboardView === "donations" && (
-          <div className="card">
+          <div className="card donationCard">
+            <div className="printLeaderboardHeader donationPrintHeader">
+              <div>
+                <div className="printTitle">
+                  No Kids Hungry Donations · {activeStoreName}
+                </div>
+                <div className="printSub">
+                  Aug 19 through Oct 27, 2026 · Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
+                </div>
+              </div>
+
+              <div className="printQrBox">
+                <QRCodeSVG
+                  value="https://portal.daytadna.com"
+                  size={86}
+                  level="M"
+                  includeMargin
+                />
+              </div>
+            </div>
+
             <div className="cardHeader">
               <div>
                 <div className="cardTitle">Donation Leaderboard</div>
                 <div className="cardSub">Aug 19 through Oct 27, 2026</div>
               </div>
-              <div className="donationTotal">
-                Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
+              <div className="donationHeaderActions">
+                <div className="donationTotal">
+                  Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
+                </div>
+                <button
+                  type="button"
+                  className="leaderboardHeaderAction printBtn"
+                  onClick={handlePrintDonations}
+                  aria-label="Print donation leaderboard"
+                  title="Print donation leaderboard"
+                >
+                  <span aria-hidden>⎙</span>
+                  <span>Print</span>
+                </button>
               </div>
             </div>
 

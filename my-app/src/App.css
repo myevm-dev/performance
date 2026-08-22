@@ -230,6 +230,13 @@ html[data-theme="light"] .heroStoreName {
   font-weight: 900;
 }
 
+.donationHeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .donationStatus {
   padding: 36px 20px;
   text-align: center;
@@ -1270,6 +1277,66 @@ html[data-theme="light"] .modalOverlay {
   * {
     -webkit-print-color-adjust: economy !important;
     print-color-adjust: economy !important;
+  }
+
+  body.printDonations .card {
+    display: none !important;
+  }
+
+  body.printDonations .donationCard {
+    display: block !important;
+  }
+
+  body.printDonations .donationFootnote,
+  body.printDonations .donationFootnote * {
+    visibility: visible !important;
+  }
+
+  body.printDonations .donationFootnote {
+    display: block !important;
+    padding: 6px 0 0 !important;
+    border-top: none !important;
+    color: black !important;
+    font-size: 7px !important;
+    line-height: 1.2 !important;
+  }
+
+  body.printDonations .donationTable {
+    min-width: 0 !important;
+    table-layout: fixed !important;
+  }
+
+  body.printDonations .donationTable th,
+  body.printDonations .donationTable td {
+    width: auto !important;
+    padding: 3px 2px !important;
+    font-size: 7px !important;
+    line-height: 1.05 !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  body.printDonations .donationTable th {
+    white-space: normal !important;
+  }
+
+  body.printDonations .donationTable td {
+    white-space: nowrap !important;
+  }
+
+  body.printDonations .donationTable th:nth-child(1),
+  body.printDonations .donationTable td:nth-child(1) {
+    width: 3% !important;
+  }
+
+  body.printDonations .donationTable th:nth-child(2),
+  body.printDonations .donationTable td:nth-child(2) {
+    width: 13% !important;
+  }
+
+  body.printDonations .donationTable th:last-child,
+  body.printDonations .donationTable td:last-child {
+    width: 8% !important;
   }
 }
 
