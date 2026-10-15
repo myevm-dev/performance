@@ -41,7 +41,7 @@ export default function ScoringInfoModal({
                 textDecoration: "underline dotted",
               }}
             >
-              Scoring v1.3.1
+              Scoring v1.3.2
             </button>
           </div>
 
@@ -52,7 +52,7 @@ export default function ScoringInfoModal({
 
         <div className="modalBody">
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="grid2">
@@ -81,9 +81,10 @@ export default function ScoringInfoModal({
               </div>
 
               <div className="hint" style={{ marginTop: "10px" }}>
-                Reviews are scaled against a target of 25 reviews, and Rewards are scaled against
-                a target of 10 rewards. This keeps the leaderboard simple while still rewarding
-                servers who drive guest engagement beyond BADA performance.
+                Reviews are scaled against a target of 1 review per $500 in sales, and Rewards
+                against 1 signup per $800 in sales. Meeting these targets earns 390 review
+                points and 150 reward points. Reviews and rewards earn zero points when sales
+                are zero or unavailable.
               </div>
 
               <div className="hint" style={{ marginTop: "10px" }}>

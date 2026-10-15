@@ -33,9 +33,9 @@ export default function ScoreBreakdownModal({
 }: ScoreBreakdownModalProps) {
   if (!open || !server) return null
 
-  const badaPoints = 460 * (server.badaPercent / 130)
-  const reviewPoints = 390 * (server.reviews / 25)
-  const rewardPoints = 150 * (server.rewards / 10)
+  const badaPoints = 460 * (server.badaPercent / 140)
+  const reviewPoints = server.sales > 0 ? 390 * (server.reviews / (server.sales / 500)) : 0
+  const rewardPoints = server.sales > 0 ? 150 * (server.rewards / (server.sales / 800)) : 0
   const promoRate = server.sales > 0 ? server.promoDollars / server.sales : 0
   const promoPenaltyBase = getPromoPenaltyBase(promoRate)
   const weightedPromoPenalty = promoPenaltyBase * PROMO_WEIGHT
@@ -61,8 +61,9 @@ export default function ScoreBreakdownModal({
         </div>
 
         <div className="modalBody">
+          <div className="hint">Reviews and rewards earn zero points when sales are zero or unavailable.</div>
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 130)) + (390 × (Reviews ÷ 25)) + (150 × (Rewards ÷ 10)) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="panel" style={{ marginTop: 16 }}>
@@ -101,15 +102,15 @@ export default function ScoreBreakdownModal({
 
             <div className="penaltyTable" style={{ marginTop: 12 }}>
               <div className="penRow">
-                <span>460 × ({server.badaPercent} ÷ 130)</span>
+                <span>460 × ({server.badaPercent} ÷ 140)</span>
                 <span>{badaPoints.toFixed(2)}</span>
               </div>
               <div className="penRow">
-                <span>390 × ({server.reviews} ÷ 25)</span>
+                <span>390 × ({server.reviews} ÷ (${server.sales} ÷ 500))</span>
                 <span>{reviewPoints.toFixed(2)}</span>
               </div>
               <div className="penRow">
-                <span>150 × ({server.rewards} ÷ 10)</span>
+                <span>150 × ({server.rewards} ÷ (${server.sales} ÷ 800))</span>
                 <span>{rewardPoints.toFixed(2)}</span>
               </div>
               <div className="penRow" style={{ color: getPromoPenaltyColor(promoRate) }}>

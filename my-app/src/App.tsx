@@ -284,7 +284,7 @@ function ServerProfileRoute({
           badaPercent: number | null
         }> = []
 
-        badaSnap.docs.forEach((docSnap) => {
+        badaSnap.docs.forEach((docSnap, weekIndex) => {
           const data = docSnap.data() as {
             weekStart?: any
             rows?: Array<{
@@ -323,10 +323,14 @@ function ServerProfileRoute({
             badaPercent: rowBada,
           })
 
-          badaSum += rowBada
-          badaCount += 1
-          sales += Number(serverRow.sales ?? 0)
-          promoDollars += Number(serverRow.promosVoidsSum ?? 0)
+          // Match the leaderboard's latest three published weeks for scoring.
+          // Keep all fetched weeks above for the history chart.
+          if (weekIndex < 3) {
+            badaSum += rowBada
+            badaCount += 1
+            sales += Number(serverRow.sales ?? 0)
+            promoDollars += Number(serverRow.promosVoidsSum ?? 0)
+          }
         })
 
         const badaPercent = badaCount > 0 ? badaSum / badaCount : 0

@@ -23,7 +23,7 @@ export default function ChangelogModal({
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">Changelog</div>
-            <div className="modalSub">Scoring v1.3.1</div>
+            <div className="modalSub">Scoring v1.3.2</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -32,6 +32,16 @@ export default function ChangelogModal({
         </div>
 
         <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">v1.3.2</div>
+            <div className="hint" style={{ marginTop: 10 }}>
+              Restored sales-based engagement targets: 1 review per $500 in sales
+              and 1 rewards signup per $800 in sales, replacing fixed targets of
+              25 reviews and 10 rewards. Meeting the targets earns 390 and 150
+              points respectively. With zero or unavailable sales, engagement
+              points are zero. BADA and promo/void scoring are unchanged.
+            </div>
+          </div>
           <div className="panel">
             <div className="panelTitle">v1.3.1</div>
 
