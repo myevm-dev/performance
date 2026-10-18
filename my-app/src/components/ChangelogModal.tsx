@@ -23,7 +23,7 @@ export default function ChangelogModal({
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">Changelog</div>
-            <div className="modalSub">Version v1.4.2</div>
+            <div className="modalSub">Version v1.4.3</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -32,6 +32,14 @@ export default function ChangelogModal({
         </div>
 
         <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">v1.4.3</div>
+            <div className="hint" style={{ marginTop: 10 }}>
+              Moved 3 percentage points each from reviews and rewards to BADA.
+              The score now allocates 57% to BADA, 31% to reviews, and 12% to
+              rewards, worth 570, 310, and 120 points when each target is met.
+            </div>
+          </div>
           <div className="panel">
             <div className="panelTitle">v1.4.2</div>
             <div className="hint" style={{ marginTop: 10 }}>
