@@ -1,3 +1,4 @@
+import { PROMO_WEIGHT } from "../lib/score"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { getGlassGradient } from "../lib/glassColors"
 import {
@@ -321,7 +322,7 @@ function ScoreBreakdownModal({
   const score = server.score ?? 0
   const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
   const promoPenaltyBase = getPromoPenaltyBase(promoRate)
-  const promoWeighted = promoPenaltyBase * 0.15
+  const promoWeighted = promoPenaltyBase * PROMO_WEIGHT
   const badaPoints = 460 * (badaPercent / 140)
   const reviewPoints = sales > 0 ? 390 * (reviews / (sales / 500)) : 0
   const rewardPoints = sales > 0 ? 150 * (rewards / (sales / 800)) : 0
@@ -355,7 +356,7 @@ function ScoreBreakdownModal({
           <div className="hint">Reviews and rewards earn zero points when sales are zero or unavailable.</div>
           <div className="codeBlock">
             Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
-            (Rewards ÷ (Sales ÷ 800))) - (PromoPenalty × 0.15)
+            (Rewards ÷ (Sales ÷ 800))) - (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div
@@ -393,7 +394,7 @@ function ScoreBreakdownModal({
               [`460 × (${badaPercent.toFixed(1)} ÷ 140)`, badaPoints.toFixed(2)],
               [`390 × (${reviews} ÷ (${sales} ÷ 500))`, reviewPoints.toFixed(2)],
               [`150 × (${rewards} ÷ (${sales} ÷ 800))`, rewardPoints.toFixed(2)],
-              [`${promoPenaltyBase} × 0.15`, `-${promoWeighted.toFixed(2)}`],
+              [`${promoPenaltyBase} × ${PROMO_WEIGHT}`, `-${promoWeighted.toFixed(2)}`],
               ["Promo/Void $", formatMoney(promoDollars)],
               ["Sales", formatMoney(sales)],
             ].map(([label, value], index) => (
@@ -415,7 +416,7 @@ function ScoreBreakdownModal({
                   style={{
                     fontWeight: 950,
                     color:
-                      label === `${promoPenaltyBase} × 0.15`
+                      label === `${promoPenaltyBase} × ${PROMO_WEIGHT}`
                         ? getPromoPenaltyColor(promoRate)
                         : "var(--text)",
                   }}

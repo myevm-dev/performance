@@ -1,4 +1,4 @@
-const PROMO_WEIGHT = 0.15
+import { PROMO_WEIGHT } from "../lib/score"
 
 function getPromoPenaltyBase(promoRate: number) {
   if (promoRate > 0.75 / 100) return 250

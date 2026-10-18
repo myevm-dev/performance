@@ -23,7 +23,7 @@ export default function ChangelogModal({
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">Changelog</div>
-            <div className="modalSub">Version v1.4.0</div>
+            <div className="modalSub">Version v1.4.1</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -32,6 +32,14 @@ export default function ChangelogModal({
         </div>
 
         <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">v1.4.1</div>
+            <div className="hint" style={{ marginTop: 10 }}>
+              Increased promo/void score deductions by 20%, raising the penalty
+              multiplier from 0.15 to 0.18. The deductions are now 9, 18, 31.5,
+              and 45 points across the existing penalty tiers.
+            </div>
+          </div>
           <div className="panel">
             <div className="panelTitle">v1.4.0</div>
             <div className="hint" style={{ marginTop: 10 }}>

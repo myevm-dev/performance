@@ -1,3 +1,5 @@
+export const PROMO_WEIGHT = 0.18
+
 export function calculateScore({
   badaPercent,
   reviews,
@@ -23,7 +25,6 @@ export function calculateScore({
   else if (promoRate > 0.3 / 100) promoPenalty = 100
   else if (promoRate > 0.2 / 100) promoPenalty = 50
 
-  const PROMO_WEIGHT = 0.15
   const weightedPromoPenalty = promoPenalty * PROMO_WEIGHT
 
   return Math.round(badaPoints + reviewPoints + rewardPoints - weightedPromoPenalty)
