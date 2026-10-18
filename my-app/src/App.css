@@ -464,6 +464,11 @@ html[data-theme="dark"] .leaderboardStoreSearchResults {
   white-space: nowrap;
 }
 
+.engagementStats {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .rankPill {
   width: 36px;
   height: 36px;
@@ -1014,6 +1019,16 @@ html[data-theme="light"] .modalOverlay {
     width: 110px !important;
   }
 
+  .table thead th:nth-child(7),
+  .table tbody td:nth-child(7) {
+    width: 240px !important;
+  }
+
+  .table thead th:nth-child(8),
+  .table tbody td:nth-child(8) {
+    width: 110px !important;
+  }
+
   .nameCell {
     display: block;
     min-width: 0;
@@ -1197,37 +1212,42 @@ html[data-theme="light"] .modalOverlay {
 
   .table th:nth-child(1),
   .table td:nth-child(1) {
-    width: 7% !important;
+    width: 6% !important;
   }
 
   .table th:nth-child(2),
   .table td:nth-child(2) {
-    width: 25% !important;
+    width: 19% !important;
   }
 
   .table th:nth-child(3),
   .table td:nth-child(3) {
-    width: 11% !important;
+    width: 9% !important;
   }
 
   .table th:nth-child(4),
   .table td:nth-child(4) {
-    width: 12% !important;
+    width: 9% !important;
   }
 
   .table th:nth-child(5),
   .table td:nth-child(5) {
-    width: 12% !important;
+    width: 9% !important;
   }
 
   .table th:nth-child(6),
   .table td:nth-child(6) {
-    width: 12% !important;
+    width: 9% !important;
   }
 
   .table th:nth-child(7),
   .table td:nth-child(7) {
-    width: 21% !important;
+    width: 25% !important;
+  }
+
+  .table th:nth-child(8),
+  .table td:nth-child(8) {
+    width: 14% !important;
   }
 
   .rankPill {

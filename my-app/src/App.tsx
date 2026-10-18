@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react"
 import "./App.css"
 import { calculateScore } from "./lib/score"
+import { formatSalesPerAction } from "./lib/engagementStats"
 import { fetchStaffCountsLast21Days } from "./lib/events"
 import ServerClicksModal from "./components/ServerClicksModal"
 import { collection, getDocs, query, where, orderBy, limit } from "firebase/firestore"
@@ -1157,6 +1158,7 @@ function LeaderboardApp({
                     <th style={{ textAlign: "right" }}>BADA %</th>
                     <th style={{ textAlign: "right" }}>Reviews</th>
                     <th style={{ textAlign: "right" }}>Rewards</th>
+                    <th className="engagementStatsHeader">Stats</th>
                     <th style={{ textAlign: "right" }}>Promos/Voids ($)</th>
                   </tr>
                 </thead>
@@ -1230,6 +1232,10 @@ function LeaderboardApp({
 
                         <td style={{ textAlign: "right" }}>{s.reviews}</td>
                         <td style={{ textAlign: "right" }}>{s.rewards}</td>
+                        <td className="engagementStats">
+                          <div>{formatSalesPerAction(s.sales, s.reviews, "review")}</div>
+                          <div>{formatSalesPerAction(s.sales, s.rewards, "reward")}</div>
+                        </td>
                         <td
                           style={{
                             textAlign: "right",
