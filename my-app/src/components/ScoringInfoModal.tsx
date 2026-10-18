@@ -1,4 +1,4 @@
-const PROMO_WEIGHT = 0.15
+import { PROMO_WEIGHT } from "../lib/score"
 
 type ScoringInfoModalProps = {
   open: boolean
@@ -13,7 +13,7 @@ export default function ScoringInfoModal({
 }: ScoringInfoModalProps) {
   if (!open) return null
 
-  const weighted = (base: number) => Math.round(base * PROMO_WEIGHT)
+  const weighted = (base: number) => (base * PROMO_WEIGHT).toFixed(2)
 
   return (
     <div className="modalOverlay" onClick={onClose} role="presentation">
@@ -41,7 +41,7 @@ export default function ScoringInfoModal({
                 textDecoration: "underline dotted",
               }}
             >
-              Scoring v1.4.0
+              Scoring v1.4.1
             </button>
           </div>
 
