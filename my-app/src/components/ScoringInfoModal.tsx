@@ -41,7 +41,7 @@ export default function ScoringInfoModal({
                 textDecoration: "underline dotted",
               }}
             >
-              Scoring v1.4.1
+              Scoring v1.4.2
             </button>
           </div>
 
@@ -52,7 +52,7 @@ export default function ScoringInfoModal({
 
         <div className="modalBody">
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (510 × (BADA% ÷ 140)) + (340 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="grid2">
@@ -62,10 +62,10 @@ export default function ScoringInfoModal({
 
               <ul className="list">
                 <li>
-                  <b>BADA:</b> 46% of the score
+                  <b>BADA:</b> 51% of the score
                 </li>
                 <li>
-                  <b>Reviews:</b> 39% of the score
+                  <b>Reviews:</b> 34% of the score
                 </li>
                 <li>
                   <b>Rewards:</b> 15% of the score
@@ -74,7 +74,7 @@ export default function ScoringInfoModal({
               <br />
 
               <div className="hint">
-                BADA, Reviews, and Rewards are weighted 46% / 39% / 15% of the total score.
+                BADA, Reviews, and Rewards are weighted 51% / 34% / 15% of the total score.
                 BADA is scaled against a 140% target. A server at 140% BADA earns the full BADA
                 portion of the score. A server above 140% can earn extra BADA points, while a
                 server below 140% earns a proportional amount.
@@ -82,7 +82,7 @@ export default function ScoringInfoModal({
 
               <div className="hint" style={{ marginTop: "10px" }}>
                 Reviews are scaled against a target of 1 review per $500 in sales, and Rewards
-                against 1 signup per $800 in sales. Meeting these targets earns 390 review
+                against 1 signup per $800 in sales. Meeting these targets earns 340 review
                 points and 150 reward points. Reviews and rewards earn zero points when sales
                 are zero or unavailable.
               </div>

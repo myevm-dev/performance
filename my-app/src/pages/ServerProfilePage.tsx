@@ -323,8 +323,8 @@ function ScoreBreakdownModal({
   const promoRate = sales > 0 ? promoDollars / sales : server.promoRate ?? 0
   const promoPenaltyBase = getPromoPenaltyBase(promoRate)
   const promoWeighted = promoPenaltyBase * PROMO_WEIGHT
-  const badaPoints = 460 * (badaPercent / 140)
-  const reviewPoints = sales > 0 ? 390 * (reviews / (sales / 500)) : 0
+  const badaPoints = 510 * (badaPercent / 140)
+  const reviewPoints = sales > 0 ? 340 * (reviews / (sales / 500)) : 0
   const rewardPoints = sales > 0 ? 150 * (rewards / (sales / 800)) : 0
 
   return (
@@ -355,7 +355,7 @@ function ScoreBreakdownModal({
         <div className="modalBody">
           <div className="hint">Reviews and rewards earn zero points when sales are zero or unavailable.</div>
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
+            Score = (510 × (BADA% ÷ 140)) + (340 × (Reviews ÷ (Sales ÷ 500))) + (150 ×
             (Rewards ÷ (Sales ÷ 800))) - (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
@@ -391,8 +391,8 @@ function ScoreBreakdownModal({
             }}
           >
             {[
-              [`460 × (${badaPercent.toFixed(1)} ÷ 140)`, badaPoints.toFixed(2)],
-              [`390 × (${reviews} ÷ (${sales} ÷ 500))`, reviewPoints.toFixed(2)],
+              [`510 × (${badaPercent.toFixed(1)} ÷ 140)`, badaPoints.toFixed(2)],
+              [`340 × (${reviews} ÷ (${sales} ÷ 500))`, reviewPoints.toFixed(2)],
               [`150 × (${rewards} ÷ (${sales} ÷ 800))`, rewardPoints.toFixed(2)],
               [`${promoPenaltyBase} × ${PROMO_WEIGHT}`, `-${promoWeighted.toFixed(2)}`],
               ["Promo/Void $", formatMoney(promoDollars)],

@@ -33,8 +33,8 @@ export default function ScoreBreakdownModal({
 }: ScoreBreakdownModalProps) {
   if (!open || !server) return null
 
-  const badaPoints = 460 * (server.badaPercent / 140)
-  const reviewPoints = server.sales > 0 ? 390 * (server.reviews / (server.sales / 500)) : 0
+  const badaPoints = 510 * (server.badaPercent / 140)
+  const reviewPoints = server.sales > 0 ? 340 * (server.reviews / (server.sales / 500)) : 0
   const rewardPoints = server.sales > 0 ? 150 * (server.rewards / (server.sales / 800)) : 0
   const promoRate = server.sales > 0 ? server.promoDollars / server.sales : 0
   const promoPenaltyBase = getPromoPenaltyBase(promoRate)
@@ -63,7 +63,7 @@ export default function ScoreBreakdownModal({
         <div className="modalBody">
           <div className="hint">Reviews and rewards earn zero points when sales are zero or unavailable.</div>
           <div className="codeBlock">
-            Score = (460 × (BADA% ÷ 140)) + (390 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
+            Score = (510 × (BADA% ÷ 140)) + (340 × (Reviews ÷ (Sales ÷ 500))) + (150 × (Rewards ÷ (Sales ÷ 800))) − (PromoPenalty × {PROMO_WEIGHT})
           </div>
 
           <div className="panel" style={{ marginTop: 16 }}>
@@ -102,11 +102,11 @@ export default function ScoreBreakdownModal({
 
             <div className="penaltyTable" style={{ marginTop: 12 }}>
               <div className="penRow">
-                <span>460 × ({server.badaPercent} ÷ 140)</span>
+                <span>510 × ({server.badaPercent} ÷ 140)</span>
                 <span>{badaPoints.toFixed(2)}</span>
               </div>
               <div className="penRow">
-                <span>390 × ({server.reviews} ÷ (${server.sales} ÷ 500))</span>
+                <span>340 × ({server.reviews} ÷ (${server.sales} ÷ 500))</span>
                 <span>{reviewPoints.toFixed(2)}</span>
               </div>
               <div className="penRow">

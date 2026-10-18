@@ -13,8 +13,8 @@ export function calculateScore({
   promoDollars: number
   sales: number
 }) {
-  const badaPoints = 460 * (badaPercent / 140)
-  const reviewPoints = sales > 0 ? 390 * (reviews / (sales / 500)) : 0
+  const badaPoints = 510 * (badaPercent / 140)
+  const reviewPoints = sales > 0 ? 340 * (reviews / (sales / 500)) : 0
   const rewardPoints = sales > 0 ? 150 * (rewards / (sales / 800)) : 0
 
   const promoRate = sales > 0 ? promoDollars / sales : 0
