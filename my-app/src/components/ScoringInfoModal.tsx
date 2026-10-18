@@ -41,7 +41,7 @@ export default function ScoringInfoModal({
                 textDecoration: "underline dotted",
               }}
             >
-              Scoring v1.3.2
+              Scoring v1.4.0
             </button>
           </div>
 

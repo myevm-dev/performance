@@ -23,7 +23,7 @@ export default function ChangelogModal({
 
           <div className="modalHeaderCenter">
             <div className="modalTitle">Changelog</div>
-            <div className="modalSub">Scoring v1.3.2</div>
+            <div className="modalSub">Version v1.4.0</div>
           </div>
 
           <button className="iconBtn" onClick={onClose} aria-label="Close">
@@ -32,6 +32,16 @@ export default function ChangelogModal({
         </div>
 
         <div className="modalBody">
+          <div className="panel">
+            <div className="panelTitle">v1.4.0</div>
+            <div className="hint" style={{ marginTop: 10 }}>
+              Added a Stats column showing 1 review and 1 reward per dollar
+              amount in sales, using the same sales and counts as the score.
+              Lower sales per review or reward means a stronger engagement rate.
+              Zero counts and unavailable sales are labeled explicitly.
+              The scoring formula and targets are unchanged.
+            </div>
+          </div>
           <div className="panel">
             <div className="panelTitle">v1.3.2</div>
             <div className="hint" style={{ marginTop: 10 }}>
