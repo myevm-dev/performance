@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 import { doc, getDoc } from "firebase/firestore"
 import { db } from "../lib/firebase"
+import { loadContestStandings, type ContestStandings } from "../lib/contestStandings"
 
 type ContestPrize = {
   place: number
@@ -156,6 +157,16 @@ function getMetricBadge(metric: string) {
   return "border-amber-500/30 bg-amber-500/10 text-amber-600"
 }
 
+function getEffectiveStatus(contest: ContestData, now: Date): ContestData["status"] {
+  if (contest.status === "cancelled") return "cancelled"
+  const start = getMountainBusinessDateTime(contest.startDate)
+  if (!start) return contest.status
+  const end = addBusinessWeeks(start, contest.durationWeeks)
+  if (now < start) return "upcoming"
+  if (now < end) return "active"
+  return "completed"
+}
+
 function formatStatus(status: ContestData["status"]) {
   return status.charAt(0).toUpperCase() + status.slice(1)
 }
@@ -185,6 +196,9 @@ export default function ContestLeaderboardPage({
   const [contest, setContest] = useState<ContestData | null>(null)
   const [loading, setLoading] = useState(true)
   const [now, setNow] = useState(() => new Date())
+  const [standings, setStandings] = useState<ContestStandings | null>(null)
+  const [standingsLoading, setStandingsLoading] = useState(false)
+  const [standingsError, setStandingsError] = useState("")
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -255,6 +269,39 @@ export default function ContestLeaderboardPage({
     }
   }, [activeStore, contestId])
 
+  const status = contest ? getEffectiveStatus(contest, now) : "upcoming"
+
+  useEffect(() => {
+    if (!contest) return
+    let alive = true
+    setStandingsLoading(true)
+    setStandingsError("")
+
+    loadContestStandings(contest)
+      .then((result) => {
+        if (alive) setStandings(result)
+      })
+      .catch((error) => {
+        console.error("Failed to load contest standings:", error)
+        if (alive) setStandingsError("Couldn't load standings.")
+      })
+      .finally(() => {
+        if (alive) setStandingsLoading(false)
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [contest])
+
+  const publishedWeeks = standings?.weeks.filter((w) => w.published).length ?? 0
+  const totalWeeks = standings?.weeks.length ?? 0
+  const missingDetail =
+    standings?.metricKey !== "bada" &&
+    standings?.metricKey !== "score" &&
+    standings?.usesScorecard &&
+    standings.weeks.some((w) => w.published && !w.hasDetail)
+
   return (
     <main className="container">
       <div className="card">
@@ -318,10 +365,10 @@ export default function ContestLeaderboardPage({
 
             <span
               className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getStatusBadge(
-                contest.status
+                status
               )}`}
             >
-              {formatStatus(contest.status)}
+              {formatStatus(status)}
             </span>
           </div>
 
@@ -377,30 +424,83 @@ export default function ContestLeaderboardPage({
   </div>
 </div>
 
+            {standings?.usesScorecard && totalWeeks > 0 ? (
+              <div className="contestNote">
+                Scorecards published: {publishedWeeks} of {totalWeeks} week
+                {totalWeeks === 1 ? "" : "s"}. {contest.metric} standings update as each week&apos;s
+                server scorecard (.tsv) is published.
+                {missingDetail
+                  ? " Some weeks were published without incidence detail; republish them from the .tsv upload."
+                  : ""}
+              </div>
+            ) : null}
+
             <div className="tableWrap" aria-label="Contest leaderboard table">
               <table className="table">
                 <thead>
                   <tr>
                     <th>Rank</th>
                     <th>Server</th>
-                    <th>Metric</th>
-                    <th style={{ textAlign: "right" }}>Result</th>
+                    <th style={{ textAlign: "right" }}>{contest.metric}</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  <tr>
-                    <td colSpan={4} style={{ textAlign: "center", padding: 56 }}>
-                      <div style={{ fontWeight: 900, fontSize: 20 }}>
-                        Contest standings coming soon.
-                      </div>
-
-                      <div className="meta" style={{ marginTop: 8 }}>
-                        This page is ready. Next step is connecting the scoring
-                        logic for {contest.metric}.
-                      </div>
-                    </td>
-                  </tr>
+                  {status === "upcoming" ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 48 }}>
+                        <div style={{ fontWeight: 900, fontSize: 18 }}>Standings start {formatDate(contest.startDate)}.</div>
+                      </td>
+                    </tr>
+                  ) : standingsLoading && !standings ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 48 }}>
+                        <div className="meta">Loading standings...</div>
+                      </td>
+                    </tr>
+                  ) : standingsError ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 48 }}>
+                        <div className="meta">{standingsError}</div>
+                      </td>
+                    </tr>
+                  ) : !standings?.metricKey ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 48 }}>
+                        <div className="meta">This contest metric isn&apos;t supported yet.</div>
+                      </td>
+                    </tr>
+                  ) : standings.rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: "center", padding: 48 }}>
+                        <div className="meta">No servers on this team yet.</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    standings.rows.map((row) => (
+                      <tr
+                        key={row.code}
+                        className={
+                          row.rank === 1 ? "rowTop" : row.rank === 2 ? "rowSecond" : row.rank === 3 ? "rowThird" : ""
+                        }
+                      >
+                        <td>
+                          <div className="rankPill">{row.rank ?? "–"}</div>
+                        </td>
+                        <td>
+                          <div className="nameCell">
+                            <div style={{ fontWeight: 900 }}>{row.name}</div>
+                            {row.prize ? (
+                              <div className="meta" style={{ whiteSpace: "normal" }}>
+                                {status === "completed" ? "Wins" : "In line for"}: {row.prize}
+                              </div>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: "right", fontWeight: 950 }}>{row.display}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

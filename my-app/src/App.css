@@ -2069,3 +2069,15 @@ html[data-theme="light"] .lmLeagueLink {
   max-width: none;
   width: 100%;
 }
+
+/* Contest standings note */
+.contestNote {
+  margin: 12px 16px 0;
+  padding: 10px 14px;
+  border: 1px solid var(--stroke2);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card2) 40%, transparent);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
