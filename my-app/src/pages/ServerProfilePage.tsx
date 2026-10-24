@@ -369,7 +369,7 @@ function ScoreBreakdownModal({
           >
             <StatCard
               label="BADA %"
-              value={formatPercent(badaPercent)}
+              value={badaPercent > 0 ? formatPercent(badaPercent) : "—"}
               accent={getBadaColor(badaPercent)}
             />
             <StatCard label="Reviews" value={String(reviews)} accent="#67e8f9" />
@@ -1398,7 +1398,7 @@ const padBottom = isMobileChart ? 42 : 58
               >
                 <StatCard
                   label="BADA %"
-                  value={formatPercent(badaPercent)}
+                  value={badaPercent > 0 ? formatPercent(badaPercent) : "—"}
                   accent={getBadaColor(badaPercent)}
                   sub="Target is 140%"
                 />

@@ -17,6 +17,7 @@ import HomeStoreModal from "./components/HomeStoreModal"
 import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
 import ChangelogModal from "./components/ChangelogModal"
+import { getBadaWeekKey, isBadaWeekInWindow } from "./lib/badaWindow"
 import LeagueMatchup from "./components/LeagueMatchup"
 import BulletinBoardPage from "./pages/BulletinBoardPage"
 import ContestPage from "./pages/ContestPage"
@@ -125,7 +126,10 @@ async function loadRankServersForStore(storeNumber: string) {
     { badaSum: number; count: number; sales: number; promos: number }
   >()
 
-  badaSnap.docs.forEach((docSnap) => {
+  // Only BADA from the last 3 completed weeks counts (no stale weeks).
+  badaSnap.docs
+    .filter((docSnap) => isBadaWeekInWindow(getBadaWeekKey(docSnap.id, docSnap.data())))
+    .forEach((docSnap) => {
     const data = docSnap.data() as {
       rows?: Array<{
         code?: string
@@ -266,7 +270,7 @@ function ServerProfileRoute({
           badaPercent: number | null
         }> = []
 
-        badaSnap.docs.forEach((docSnap, weekIndex) => {
+        badaSnap.docs.forEach((docSnap) => {
           const data = docSnap.data() as {
             weekStart?: any
             rows?: Array<{
@@ -305,9 +309,9 @@ function ServerProfileRoute({
             badaPercent: rowBada,
           })
 
-          // Match the leaderboard's latest three published weeks for scoring.
-          // Keep all fetched weeks above for the history chart.
-          if (weekIndex < 3) {
+          // Score with the same trailing window as the leaderboard (last 3
+          // completed weeks). Older weeks still show in the history chart.
+          if (isBadaWeekInWindow(getBadaWeekKey(docSnap.id, data))) {
             badaSum += rowBada
             badaCount += 1
             sales += Number(serverRow.sales ?? 0)
@@ -482,6 +486,7 @@ function LeaderboardApp({
 
   const [changelogOpen, setChangelogOpen] = useState(false)
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
+  const [lastBadaStale, setLastBadaStale] = useState(false)
   const [servers, setServers] = useState<ServerStats[]>([])
   const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>("t21")
 
@@ -618,7 +623,13 @@ function LeaderboardApp({
         )
 
         if (alive) {
-          const latestPublishedAt = latestBadaSnap.docs[0]?.data()?.publishedAt
+          const latestDoc = latestBadaSnap.docs[0]
+          const latestPublishedAt = latestDoc?.data()?.publishedAt
+
+          setLastBadaStale(
+            Boolean(latestDoc) &&
+              !isBadaWeekInWindow(getBadaWeekKey(latestDoc.id, latestDoc.data()))
+          )
 
           if (latestPublishedAt?.toDate) {
             setLastBadaRefresh(
@@ -646,7 +657,10 @@ function LeaderboardApp({
           { badaSum: number; count: number; sales: number; promos: number }
         >()
 
-        badaSnap.docs.forEach((docSnap) => {
+        // Only BADA from the last 3 completed weeks counts (no stale weeks).
+        badaSnap.docs
+          .filter((docSnap) => isBadaWeekInWindow(getBadaWeekKey(docSnap.id, docSnap.data())))
+          .forEach((docSnap) => {
           const data = docSnap.data() as {
             rows?: Array<{
               code?: string
@@ -868,6 +882,7 @@ function LeaderboardApp({
               <>
                 Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last Scorecard publish:{" "}
                 {lastBadaRefresh || "Not published yet"}
+                {lastBadaStale ? " · older than 21 days, BADA not counted" : ""}
               </>
             ) : (
               "This team's preseason league matchup · Same scores as the league page"
@@ -1097,14 +1112,20 @@ function LeaderboardApp({
                         </td>
 
                         <td style={{ textAlign: "right" }}>
-                          <span
-                            style={{
-                              color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {Number(s.badaPercent.toFixed(1))}%
-                          </span>
+                          {s.badaPercent > 0 ? (
+                            <span
+                              style={{
+                                color: s.badaPercent >= 140 ? "#22c55e" : "#ef4444",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {Number(s.badaPercent.toFixed(1))}%
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--muted2)", fontWeight: 700 }} title="No BADA in the last 21 days">
+                              —
+                            </span>
+                          )}
                         </td>
 
                         <td style={{ textAlign: "right" }}>{s.reviews}</td>
