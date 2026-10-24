@@ -1273,7 +1273,7 @@ html[data-theme="light"] .modalOverlay {
 
   .heroViewToggle {
     width: 100%;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .heroViewToggleButton {
@@ -2017,4 +2017,27 @@ html[data-theme="light"] .lmLeagueLink {
   .lmTeamScore {
     font-size: 24px;
   }
+}
+
+/* Leaderboard subtitle */
+.subtitleLine {
+  display: block;
+}
+
+.subtitleNotice {
+  display: block;
+  max-width: 520px;
+  margin: 10px auto 0;
+  padding: 10px 14px;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.10);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.subtitleNotice strong {
+  color: #f59e0b;
+  font-weight: 900;
 }

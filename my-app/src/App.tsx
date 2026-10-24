@@ -880,9 +880,20 @@ function LeaderboardApp({
           <p className="subtitle">
             {leaderboardView === "t21" ? (
               <>
-                Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last Scorecard publish:{" "}
-                {lastBadaRefresh || "Not published yet"}
-                {lastBadaStale ? " · older than 21 days, BADA not counted" : ""}
+                <span className="subtitleLine">
+                  Last 21 days · Reviews & rewards live · BADA weekly
+                </span>
+                {lastBadaRefresh && !lastBadaStale ? (
+                  <span className="subtitleLine">Last scorecard: {lastBadaRefresh}</span>
+                ) : (
+                  <span className="subtitleNotice">
+                    <strong>Scores are built relative to sales.</strong>{" "}
+                    {lastBadaRefresh
+                      ? `Last scorecard was ${lastBadaRefresh}, older than 21 days.`
+                      : "No scorecard published yet."}{" "}
+                    Please publish this week&apos;s server scorecard as a tab-separated (.tsv) file.
+                  </span>
+                )}
               </>
             ) : (
               "This team's preseason league matchup · Same scores as the league page"
