@@ -277,8 +277,8 @@ export default function LeagueMatchup({ storeNumber }: { storeNumber: string }) 
           ) : null}
 
           <div className="lmRosters">
-            <Roster title={sides.mine.name} rows={staff.mine} loading={loadingDetail} />
-            <Roster title={sides.theirs.name} rows={staff.theirs} loading={loadingDetail} />
+            <Roster title={sides.mine.name} rows={staff.mine} loading={loadingDetail} mark={pendingMark(sides.mine)} />
+            <Roster title={sides.theirs.name} rows={staff.theirs} loading={loadingDetail} mark={pendingMark(sides.theirs)} />
           </div>
 
           <div className="lmFootnote">
@@ -320,10 +320,23 @@ function TeamBlock({ side, mark, won, lost }: { side: Side; mark: string; won: b
   )
 }
 
-function Roster({ title, rows, loading }: { title: string; rows: WeeklyStaffScoreRow[]; loading: boolean }) {
+function Roster({
+  title,
+  rows,
+  loading,
+  mark,
+}: {
+  title: string
+  rows: WeeklyStaffScoreRow[]
+  loading: boolean
+  mark: string
+}) {
   return (
     <div className="lmRoster">
-      <div className="lmRosterTitle">{title}</div>
+      <div className="lmRosterTitle">
+        {title}
+        {mark ? <span className="lmRosterPending">* BADA not published</span> : null}
+      </div>
       {loading && rows.length === 0 ? (
         <div className="lmMuted lmRosterEmpty">Loading players...</div>
       ) : rows.length === 0 ? (
@@ -334,8 +347,6 @@ function Roster({ title, rows, loading }: { title: string; rows: WeeklyStaffScor
             <tr>
               <th>#</th>
               <th>Server</th>
-              <th>Rev</th>
-              <th>Rew</th>
               <th>Score</th>
             </tr>
           </thead>
@@ -344,9 +355,10 @@ function Roster({ title, rows, loading }: { title: string; rows: WeeklyStaffScor
               <tr key={row.code} className={i >= COUNTED_PLAYERS ? "lmUncounted" : ""}>
                 <td>{i + 1}</td>
                 <td className="lmName">{row.name}</td>
-                <td>{row.reviews}</td>
-                <td>{row.rewards}</td>
-                <td className="lmScore">{row.score.toLocaleString()}</td>
+                <td className="lmScore">
+                  {row.score.toLocaleString()}
+                  {mark}
+                </td>
               </tr>
             ))}
           </tbody>

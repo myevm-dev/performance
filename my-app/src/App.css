@@ -2041,3 +2041,31 @@ html[data-theme="light"] .lmLeagueLink {
   color: #f59e0b;
   font-weight: 900;
 }
+
+/* View heading above the leaderboard / league matchup */
+.viewHeading {
+  margin: 18px 0 0;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.3px;
+  line-height: 1.1;
+}
+
+.lmRosterTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lmRosterPending {
+  color: #f59e0b;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.lmName {
+  max-width: none;
+  width: 100%;
+}

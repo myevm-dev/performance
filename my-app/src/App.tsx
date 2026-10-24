@@ -821,10 +821,6 @@ function LeaderboardApp({
 
       <main className="container">
         <div className="hero">
-          <h1 className="title" style={{ fontSize: 26 }}>
-            Team Leaderboard
-          </h1>
-
           <div
   className="heroStoreName"
   style={{
@@ -877,6 +873,10 @@ function LeaderboardApp({
             </button>
           </div>
 
+          <h1 className="viewHeading">
+            {leaderboardView === "t21" ? "Team · Trailing 21 Days" : "League Matchup"}
+          </h1>
+
           <p className="subtitle">
             {leaderboardView === "t21" ? (
               <>
@@ -896,7 +896,7 @@ function LeaderboardApp({
                 )}
               </>
             ) : (
-              "This team's preseason league matchup · Same scores as the league page"
+              "One week of scoring · Same formula as the 21-day leaderboard"
             )}
           </p>
         </div>
