@@ -860,7 +860,7 @@ function LeaderboardApp({
               className={`heroViewToggleButton ${leaderboardView === "t21" ? "active" : ""}`}
               onClick={() => setLeaderboardView("t21")}
             >
-              Trailing 21D Avg
+              Store Trailing 21 Day
             </button>
             <button
               type="button"
