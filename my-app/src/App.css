@@ -168,7 +168,7 @@ html[data-theme="light"] .heroStoreName {
   margin: 16px auto 0;
   padding: 4px;
   display: grid;
-  grid-template-columns: repeat(3, auto);
+  grid-template-columns: repeat(2, auto);
   gap: 4px;
   border: 1px solid var(--stroke2);
   border-radius: 999px;
@@ -223,46 +223,6 @@ html[data-theme="light"] .heroStoreName {
   margin-top: 8px;
   color: var(--muted);
   font-size: 13px;
-}
-
-.donationTotal {
-  color: var(--text);
-  font-weight: 900;
-}
-
-.donationHeaderActions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.donationStatus {
-  padding: 36px 20px;
-  text-align: center;
-}
-
-.donationAmount {
-  color: #22c55e;
-  font-weight: 900;
-  text-align: right;
-}
-
-.donationTable {
-  min-width: 1500px;
-}
-
-.donationWeekAmount {
-  text-align: right;
-  white-space: nowrap;
-}
-
-.donationFootnote {
-  padding: 10px 16px 14px;
-  border-top: 1px solid var(--stroke);
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.4;
 }
 
 /* Cards */
@@ -1299,65 +1259,6 @@ html[data-theme="light"] .modalOverlay {
     print-color-adjust: economy !important;
   }
 
-  body.printDonations .card {
-    display: none !important;
-  }
-
-  body.printDonations .donationCard {
-    display: block !important;
-  }
-
-  body.printDonations .donationFootnote,
-  body.printDonations .donationFootnote * {
-    visibility: visible !important;
-  }
-
-  body.printDonations .donationFootnote {
-    display: block !important;
-    padding: 6px 0 0 !important;
-    border-top: none !important;
-    color: black !important;
-    font-size: 7px !important;
-    line-height: 1.2 !important;
-  }
-
-  body.printDonations .donationTable {
-    min-width: 0 !important;
-    table-layout: fixed !important;
-  }
-
-  body.printDonations .donationTable th,
-  body.printDonations .donationTable td {
-    width: auto !important;
-    padding: 3px 2px !important;
-    font-size: 7px !important;
-    line-height: 1.05 !important;
-    overflow-wrap: normal !important;
-    word-break: normal !important;
-  }
-
-  body.printDonations .donationTable th {
-    white-space: normal !important;
-  }
-
-  body.printDonations .donationTable td {
-    white-space: nowrap !important;
-  }
-
-  body.printDonations .donationTable th:nth-child(1),
-  body.printDonations .donationTable td:nth-child(1) {
-    width: 3% !important;
-  }
-
-  body.printDonations .donationTable th:nth-child(2),
-  body.printDonations .donationTable td:nth-child(2) {
-    width: 13% !important;
-  }
-
-  body.printDonations .donationTable th:last-child,
-  body.printDonations .donationTable td:last-child {
-    width: 8% !important;
-  }
 }
 
 
@@ -1803,5 +1704,317 @@ html[data-theme="light"] .modalOverlay {
 
   .profileGuestLifetimeCard svg {
     min-width: 620px !important;
+  }
+}
+
+/* League matchup (League Matchup tab) */
+.lmCard {
+  max-width: 980px;
+}
+
+.lmStatus {
+  padding: 40px 20px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.lmStatusTitle {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.lmMuted {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.lmHeader {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--stroke);
+  background: color-mix(in srgb, var(--bg0) 18%, transparent);
+}
+
+.lmHeaderText {
+  text-align: center;
+  min-width: 0;
+}
+
+.lmWeekLabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.lmWeekName {
+  white-space: nowrap;
+}
+
+.lmWeekDates {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.lmPhase {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--stroke2);
+  color: var(--muted);
+}
+
+.lmPhase-live {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.lmPhase-upcoming {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.lmPhase-closing {
+  color: var(--a2);
+  border-color: color-mix(in srgb, var(--a2) 45%, transparent);
+}
+
+.lmPhase-final {
+  color: var(--text);
+  background: var(--card2);
+}
+
+.lmPageBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke2);
+  background: color-mix(in srgb, var(--card2) 50%, transparent);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lmPageBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.lmScoreboard {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px 8px;
+}
+
+.lmTeam {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+  min-width: 0;
+}
+
+.lmTeamLost {
+  opacity: 0.6;
+}
+
+.lmLogo {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid var(--stroke2);
+  background: var(--card);
+}
+
+.lmTeamName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.lmTeamNumber {
+  color: var(--muted2);
+  font-size: 12px;
+}
+
+.lmTeamScore {
+  font-size: 30px;
+  font-weight: 950;
+  color: var(--a2);
+}
+
+html[data-theme="light"] .lmTeamScore {
+  color: #0891b2;
+}
+
+.lmVs {
+  color: var(--muted2);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.lmResult {
+  margin: 4px auto 0;
+  width: fit-content;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 950;
+  border: 1px solid var(--stroke2);
+}
+
+.lmWin {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+.lmLoss {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.lmBye {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+}
+
+.lmRosters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+}
+
+.lmRoster {
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--card2) 30%, transparent);
+}
+
+.lmRosterTitle {
+  padding: 10px 12px;
+  font-weight: 950;
+  font-size: 13px;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.lmRosterEmpty {
+  padding: 16px 12px;
+}
+
+.lmTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.lmTable th {
+  padding: 8px 10px;
+  text-align: right;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.lmTable td {
+  padding: 8px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--stroke);
+}
+
+.lmTable th:nth-child(1),
+.lmTable td:nth-child(1),
+.lmTable th:nth-child(2),
+.lmTable td:nth-child(2) {
+  text-align: left;
+}
+
+.lmTable td:nth-child(1) {
+  color: var(--muted2);
+  width: 28px;
+}
+
+.lmName {
+  font-weight: 800;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lmScore {
+  font-weight: 950;
+}
+
+.lmUncounted {
+  opacity: 0.45;
+}
+
+.lmFootnote {
+  padding: 0 16px 12px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.lmFooter {
+  padding: 12px 16px;
+  border-top: 1px solid var(--stroke);
+  text-align: center;
+}
+
+.lmLeagueLink {
+  color: var(--a2);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+html[data-theme="light"] .lmLeagueLink {
+  color: #0891b2;
+}
+
+@media (max-width: 720px) {
+  .lmRosters {
+    grid-template-columns: 1fr;
+  }
+
+  .lmLogo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .lmTeamScore {
+    font-size: 24px;
   }
 }

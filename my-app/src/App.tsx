@@ -17,6 +17,7 @@ import HomeStoreModal from "./components/HomeStoreModal"
 import ScoreBreakdownModal from "./components/ScoreBreakdownModal"
 import ScoringInfoModal from "./components/ScoringInfoModal"
 import ChangelogModal from "./components/ChangelogModal"
+import LeagueMatchup from "./components/LeagueMatchup"
 import BulletinBoardPage from "./pages/BulletinBoardPage"
 import ContestPage from "./pages/ContestPage"
 import ContestLeaderboardPage from "./pages/ContestLeaderboardPage"
@@ -58,27 +59,7 @@ type LeaderboardSearchResult =
     }
 
 type ThemeMode = "light" | "dark"
-type LeaderboardView = "t21" | "donations" | "league"
-
-type DonationRow = {
-  name: string
-  amount: number
-  weekly: Record<string, number>
-}
-
-const DONATION_WEEKS = [
-  { key: "2026-08-13", label: "Aug 13–19*" },
-  { key: "2026-08-20", label: "Aug 20–26" },
-  { key: "2026-08-27", label: "Aug 27–Sep 2" },
-  { key: "2026-09-03", label: "Sep 3–9" },
-  { key: "2026-09-10", label: "Sep 10–16" },
-  { key: "2026-09-17", label: "Sep 17–23" },
-  { key: "2026-09-24", label: "Sep 24–30" },
-  { key: "2026-10-01", label: "Oct 1–7" },
-  { key: "2026-10-08", label: "Oct 8–14" },
-  { key: "2026-10-15", label: "Oct 15–21" },
-  { key: "2026-10-22", label: "Oct 22–28**" },
-] as const
+type LeaderboardView = "t21" | "league"
 
 function getInitialTheme(): ThemeMode {
   const saved = localStorage.getItem("app_theme")
@@ -503,11 +484,6 @@ function LeaderboardApp({
   const [lastBadaRefresh, setLastBadaRefresh] = useState<string>("")
   const [servers, setServers] = useState<ServerStats[]>([])
   const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>("t21")
-  const [donationRows, setDonationRows] = useState<DonationRow[]>([])
-  const [donationsLoading, setDonationsLoading] = useState(false)
-  const [donationsError, setDonationsError] = useState("")
-  const [publishedDonationWeeks, setPublishedDonationWeeks] = useState<Set<string>>(new Set())
-  const [syncedDonationWeeks, setSyncedDonationWeeks] = useState<Set<string>>(new Set())
 
   const activeStore = viewedStore || homeStore || "6909"
   useEffect(() => {
@@ -579,18 +555,6 @@ function LeaderboardApp({
 
   const handlePrintLeaderboard = () => {
     window.print()
-  }
-
-  const handlePrintDonations = () => {
-    const printClass = "printDonations"
-    const cleanup = () => document.body.classList.remove(printClass)
-
-    document.body.classList.add(printClass)
-    window.addEventListener("afterprint", cleanup, { once: true })
-    window.print()
-
-    // Covers browsers that do not fire afterprint reliably.
-    window.setTimeout(cleanup, 1000)
   }
 
   const handleSaveHomeStore = () => {
@@ -746,82 +710,6 @@ function LeaderboardApp({
   }, [activeStore])
 
   useEffect(() => {
-    if (leaderboardView !== "donations") return
-
-    let alive = true
-    setDonationsLoading(true)
-    setDonationsError("")
-
-    ;(async () => {
-      try {
-        const [publishedSnap, donationSnap] = await Promise.all([
-          getDocs(collection(db, "stores", activeStore, "badaPublishedWeeks")),
-          getDocs(collection(db, "stores", activeStore, "donationPublishedWeeks")),
-        ])
-        const totals = new Map<string, DonationRow>()
-        const publishedWeeks = new Set<string>()
-        const syncedWeeks = new Set<string>()
-        const competitionWeekKeys = new Set<string>(
-          DONATION_WEEKS.map((week) => week.key)
-        )
-
-        publishedSnap.docs.forEach((docSnap) => {
-          if (competitionWeekKeys.has(docSnap.id)) publishedWeeks.add(docSnap.id)
-        })
-
-        donationSnap.docs.forEach((docSnap) => {
-          if (!competitionWeekKeys.has(docSnap.id)) return
-
-          const data = docSnap.data() as {
-            rows?: Array<{
-              mappedName?: string
-              originalName?: string
-              excludedNetSales?: number
-            }>
-          }
-
-          syncedWeeks.add(docSnap.id)
-
-          ;(data.rows ?? []).forEach((row) => {
-            const name = row.mappedName ?? row.originalName ?? "Unnamed"
-            const key = name.toLowerCase().trim()
-            const existing = totals.get(key) ?? { name, amount: 0, weekly: {} }
-            const amount = typeof row.excludedNetSales === "number" ? row.excludedNetSales : 0
-
-            totals.set(key, {
-              name: existing.name,
-              amount: existing.amount + amount,
-              weekly: {
-                ...existing.weekly,
-                ...(typeof row.excludedNetSales === "number"
-                  ? { [docSnap.id]: row.excludedNetSales }
-                  : {}),
-              },
-            })
-          })
-        })
-
-        if (alive) {
-          setPublishedDonationWeeks(publishedWeeks)
-          setSyncedDonationWeeks(syncedWeeks)
-          setDonationRows(
-            Array.from(totals.values()).sort((a, b) => b.amount - a.amount)
-          )
-        }
-      } catch (error) {
-        console.error("Failed to load donation totals:", error)
-        if (alive) setDonationsError("Unable to load published donation data.")
-      } finally {
-        if (alive) setDonationsLoading(false)
-      }
-    })()
-
-    return () => {
-      alive = false
-    }
-  }, [activeStore, leaderboardView])
-
-  useEffect(() => {
     let alive = true
 
     ;(async () => {
@@ -967,15 +855,6 @@ function LeaderboardApp({
             <button
               type="button"
               role="tab"
-              aria-selected={leaderboardView === "donations"}
-              className={`heroViewToggleButton ${leaderboardView === "donations" ? "active" : ""}`}
-              onClick={() => setLeaderboardView("donations")}
-            >
-              No Kids Hungry
-            </button>
-            <button
-              type="button"
-              role="tab"
               aria-selected={leaderboardView === "league"}
               className={`heroViewToggleButton ${leaderboardView === "league" ? "active" : ""}`}
               onClick={() => setLeaderboardView("league")}
@@ -990,10 +869,8 @@ function LeaderboardApp({
                 Trailing 21 days · Reviews & Rewards near real-time. BADA & Promos weekly · Last Scorecard publish:{" "}
                 {lastBadaRefresh || "Not published yet"}
               </>
-            ) : leaderboardView === "donations" ? (
-              "Competition runs Aug 19 through Oct 27, 2026 · Ranked by Excluded Net Sales"
             ) : (
-              "League matchups are coming soon."
+              "This team's preseason league matchup · Same scores as the league page"
             )}
           </p>
         </div>
@@ -1254,108 +1131,7 @@ function LeaderboardApp({
           </>
         </div>
 
-        {leaderboardView === "donations" && (
-          <div className="card donationCard">
-            <div className="printLeaderboardHeader donationPrintHeader">
-              <div>
-                <div className="printTitle">
-                  No Kids Hungry Donations · {activeStoreName}
-                </div>
-                <div className="printSub">
-                  Aug 19 through Oct 27, 2026 · Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
-                </div>
-              </div>
-
-              <div className="printQrBox">
-                <QRCodeSVG
-                  value="https://portal.daytadna.com"
-                  size={86}
-                  level="M"
-                  includeMargin
-                />
-              </div>
-            </div>
-
-            <div className="cardHeader">
-              <div>
-                <div className="cardTitle">Donation Leaderboard</div>
-                <div className="cardSub">Aug 19 through Oct 27, 2026</div>
-              </div>
-              <div className="donationHeaderActions">
-                <div className="donationTotal">
-                  Total ${donationRows.reduce((sum, row) => sum + row.amount, 0).toFixed(2)}
-                </div>
-                <button
-                  type="button"
-                  className="leaderboardHeaderAction printBtn"
-                  onClick={handlePrintDonations}
-                  aria-label="Print donation leaderboard"
-                  title="Print donation leaderboard"
-                >
-                  <span aria-hidden>⎙</span>
-                  <span>Print</span>
-                </button>
-              </div>
-            </div>
-
-            {donationsLoading ? (
-              <div className="dashboardViewPlaceholderText donationStatus">Loading donations...</div>
-            ) : donationsError ? (
-              <div className="dashboardViewPlaceholderText donationStatus">{donationsError}</div>
-            ) : donationRows.length === 0 ? (
-              <div className="dashboardViewPlaceholderText donationStatus">No published server rows are available for the competition weeks yet.</div>
-            ) : (
-              <div className="tableWrap">
-                <table className="table donationTable">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Server</th>
-                      {DONATION_WEEKS.map((week) => (
-                        <th key={week.key} style={{ textAlign: "right" }}>{week.label}</th>
-                      ))}
-                      <th style={{ textAlign: "right" }}>Donations</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {donationRows.map((row, index) => (
-                      <tr key={row.name} className={index === 0 ? "rowTop" : index === 1 ? "rowSecond" : index === 2 ? "rowThird" : ""}>
-                        <td><div className="rankPill">{index + 1}</div></td>
-                        <td><div className="nameCell">{row.name}</div></td>
-                        {DONATION_WEEKS.map((week) => {
-                          const isPublished = publishedDonationWeeks.has(week.key)
-                          const isSynced = syncedDonationWeeks.has(week.key)
-                          const amount = row.weekly[week.key]
-
-                          return (
-                            <td key={week.key} className="donationWeekAmount">
-                              {!isPublished ? "—" : !isSynced ? "Sync" : `$${(amount ?? 0).toFixed(2)}`}
-                            </td>
-                          )
-                        })}
-                        <td className="donationAmount">${row.amount.toFixed(2)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <div className="donationFootnote">
-              * Competition begins Wednesday, Aug 19. ** Competition ends Tuesday, Oct 27. “Sync” means that published week still needs Excluded Net Sales added from its stored raw upload.
-            </div>
-          </div>
-        )}
-
-        {leaderboardView === "league" && (
-          <div className="card dashboardViewPlaceholder">
-            <div className="dashboardViewPlaceholderTitle">
-              League Matchup
-            </div>
-            <div className="dashboardViewPlaceholderText">
-              WIP.
-            </div>
-          </div>
-        )}
+        {leaderboardView === "league" && <LeagueMatchup storeNumber={activeStore} />}
       </main>
 
       <ScoringInfoModal
