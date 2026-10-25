@@ -8,6 +8,7 @@ import {
   query,
   where,
 } from "firebase/firestore"
+import { getStaffDisplayName } from "../staffName"
 import { db } from "../firebase"
 import { calculateLeagueScore as calculateScore } from "./leagueScore"
 
@@ -246,7 +247,10 @@ async function getStaffForStore(storeNumber: string) {
 
     return {
       code,
-      name: data.preferredName ?? data.name ?? code,
+      // Shown publicly
+      name: getStaffDisplayName(data, code),
+      // Scorecard name, used only to match BADA rows that have no code
+      matchName: data.name ?? code,
     }
   })
 }
@@ -418,6 +422,7 @@ export async function buildWeeklyStoreScore({
     {
       code: string
       name: string
+      matchName?: string
     }
   >()
 
@@ -446,7 +451,15 @@ export async function buildWeeklyStoreScore({
     }
 
     if (!code && name) {
-      const fallbackCode = `bada-${normalizeText(name) || index}`
+      // Skip rows that already belong to a known server by scorecard name,
+      // otherwise that server would be counted twice.
+      const key = normalizeText(name)
+      const alreadyKnown = Array.from(staffMap.values()).some(
+        (staff) => normalizeText(staff.matchName ?? staff.name) === key
+      )
+      if (alreadyKnown) return
+
+      const fallbackCode = `bada-${key || index}`
       if (!staffMap.has(fallbackCode)) {
         staffMap.set(fallbackCode, {
           code: fallbackCode,
@@ -463,7 +476,7 @@ export async function buildWeeklyStoreScore({
         rewards: 0,
       }
 
-      const nameKey = normalizeText(staff.name)
+      const nameKey = normalizeText(staff.matchName ?? staff.name)
 
       const badaRows =
         badaGroups.byCode.get(staff.code) ??

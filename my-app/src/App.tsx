@@ -22,6 +22,7 @@ import LeagueMatchup from "./components/LeagueMatchup"
 import BulletinBoardPage from "./pages/BulletinBoardPage"
 import ContestPage from "./pages/ContestPage"
 import ContestLeaderboardPage from "./pages/ContestLeaderboardPage"
+import { getStaffDisplayName } from "./lib/staffName"
 
 type ServerStats = {
   id: string
@@ -108,7 +109,7 @@ async function loadRankServersForStore(storeNumber: string) {
 
     return {
       code: String(data.code ?? docSnap.id),
-      name: data.name ?? "Unnamed",
+      name: getStaffDisplayName(data),
       legacyid: data.legacyid ?? null,
     }
   })
@@ -327,7 +328,7 @@ function ServerProfileRoute({
         const profileServer = {
           id: String(staffData.code ?? staffDoc.id),
           code: String(staffData.code ?? staffDoc.id),
-          name: staffData.name ?? "Unnamed",
+          name: getStaffDisplayName(staffData),
           storeNumber,
           storeName,
           score: calculateScore({
@@ -609,7 +610,7 @@ function LeaderboardApp({
 
           return {
             code: data.code ?? docSnap.id,
-            name: data.name ?? "Unnamed",
+            name: getStaffDisplayName(data),
             legacyid: data.legacyid ?? null,
           }
         })
@@ -786,7 +787,7 @@ function LeaderboardApp({
           return {
             id: docSnap.id,
             code,
-            name: data.name ?? "Unnamed",
+            name: getStaffDisplayName(data),
             storeNumber,
             storeName,
           }

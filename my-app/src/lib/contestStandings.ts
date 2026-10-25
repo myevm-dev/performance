@@ -13,6 +13,7 @@
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore"
 import { db } from "./firebase"
 import { calculateScore } from "./score"
+import { getStaffDisplayName } from "./staffName"
 import { addCalendarDays, getLeagueWeekWindowForThursday, parseDateKey } from "./league/leagueWeek"
 
 export type ContestMetricKey =
@@ -136,7 +137,7 @@ export async function loadContestStandings(contest: {
   staffSnap.docs.forEach((d) => {
     const data = d.data() as { code?: string; name?: string; legacyid?: string | null }
     const code = String(data.code ?? d.id)
-    names.set(code, data.name ?? code)
+    names.set(code, getStaffDisplayName(data, code))
     aliasToCode.set(code, code)
     if (data.legacyid) aliasToCode.set(String(data.legacyid), code)
   })
