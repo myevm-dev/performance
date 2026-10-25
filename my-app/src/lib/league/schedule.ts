@@ -67,7 +67,7 @@ function toPreseasonWeek(id: string, data: Record<string, unknown>): PreseasonWe
     weekNumber,
     label: String(data.label ?? `Preseason Week ${weekNumber || "?"}`),
     status,
-    isFinal: status === "final",
+    isFinal: status === "finalized" || status === "final",
     eligibleTeamCount: Number(data.eligibleTeamCount ?? 0),
     matchupCount: Number(data.matchupCount ?? 0),
     byeCount: Number(data.byeCount ?? 0),
