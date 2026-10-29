@@ -6,8 +6,10 @@ import {
   getDoc,
   getDocs,
   query,
+  Timestamp,
   where,
 } from "firebase/firestore"
+import { addCalendarDays, getLeagueWeekWindowForThursday, parseDateKey } from "./leagueWeek"
 import { getStaffDisplayName } from "../staffName"
 import { db } from "../firebase"
 import { calculateLeagueScore as calculateScore } from "./leagueScore"
@@ -285,9 +287,20 @@ async function getBadaPublishedRows(args: {
   }
 }
 
+// The league week a click belongs to is decided by WHEN it happened
+// (Thu 7:00 AM MT -> Thu 7:00 AM MT), not by the weekKey label stored on it.
+// Clicks recorded before Oct 24, 2026 carry a weekKey that is one week low
+// during daylight time (old tracker bug), so the label can't be trusted.
+function getClickWindow(badaWeekKey: string) {
+  const badaThursday = parseDateKey(badaWeekKey)
+  if (!badaThursday) return null
+  return getLeagueWeekWindowForThursday(addCalendarDays(badaThursday, 7))
+}
+
 async function getWeeklyUniqueClicks(args: {
   storeNumber: string
   weekKey: string
+  badaWeekKey: string
 }) {
   const clicksRef = collection(
     db,
@@ -295,6 +308,27 @@ async function getWeeklyUniqueClicks(args: {
     args.storeNumber,
     "uniqueClicks"
   )
+
+  const window = getClickWindow(args.badaWeekKey)
+
+  if (window) {
+    try {
+      const snap = await getDocs(
+        query(
+          clicksRef,
+          where("createdAt", ">=", Timestamp.fromDate(new Date(window.weekStartAtISO))),
+          where("createdAt", "<", Timestamp.fromDate(new Date(window.weekEndAtISO)))
+        )
+      )
+
+      return snap.docs.map((clickDoc) => ({
+        id: clickDoc.id,
+        ...clickDoc.data(),
+      })) as UniqueClickDoc[]
+    } catch (error) {
+      console.warn("Click time-window query failed, using weekKey:", error)
+    }
+  }
 
   const snap = await getDocs(
     query(clicksRef, where("weekKey", "==", args.weekKey))
@@ -411,6 +445,7 @@ export async function buildWeeklyStoreScore({
     getWeeklyUniqueClicks({
       storeNumber,
       weekKey,
+      badaWeekKey,
     }),
   ])
 

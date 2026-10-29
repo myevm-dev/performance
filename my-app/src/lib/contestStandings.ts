@@ -10,7 +10,7 @@
 //
 // Scorecard-based metrics fill in as each week's scorecard is published.
 
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore"
+import { collection, doc, getDoc, getDocs, query, Timestamp, where } from "firebase/firestore"
 import { db } from "./firebase"
 import { calculateScore } from "./score"
 import { getStaffDisplayName } from "./staffName"
@@ -119,10 +119,13 @@ export async function loadContestStandings(contest: {
 
   const [staffSnap, clickSnap, badaSnaps] = await Promise.all([
     getDocs(query(collection(db, "staffUsers"), where("storeNumber", "==", store))),
+    // By when the click happened; older clicks carry a weekKey label that is
+    // one week low during daylight time, so the label can't be trusted.
     getDocs(
       query(
         collection(db, "stores", store, "uniqueClicks"),
-        where("weekKey", "in", windows.map((w) => w.weekKey))
+        where("createdAt", ">=", Timestamp.fromDate(new Date(windows[0].weekStartAtISO))),
+        where("createdAt", "<", Timestamp.fromDate(new Date(windows[windows.length - 1].weekEndAtISO)))
       )
     ),
     Promise.all(
