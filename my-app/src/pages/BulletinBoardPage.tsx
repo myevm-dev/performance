@@ -1,9 +1,17 @@
 // src/pages/BulletinBoardPage.tsx
 
 import { useEffect, useMemo, useState } from "react"
-import { collection, getDocs, orderBy, query } from "firebase/firestore"
+import { useNavigate } from "react-router-dom"
+import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore"
 import type { Timestamp } from "firebase/firestore"
 import { db } from "../lib/firebase"
+import {
+  getBulletinUrl,
+  isBulletinLock,
+  isValidBulletinPin,
+  unlockBulletinBody,
+  type BulletinLock,
+} from "../lib/bulletinLock"
 
 type BulletinImportance = "High" | "Medium" | "Low"
 type BulletinStatus = "Pinned" | "Active" | "Draft" | "Archived"
@@ -21,6 +29,7 @@ type BulletinPost = {
   createdAt?: unknown
   updatedAt?: unknown
   editedAt?: unknown
+  lock?: BulletinLock | null
 }
 
 type BulletinDocData = {
@@ -33,14 +42,26 @@ type BulletinDocData = {
   createdAt?: unknown
   updatedAt?: unknown
   editedAt?: unknown
+  pinProtected?: boolean
+  lock?: unknown
 }
 
-function getActiveStore() {
-  return (
-    localStorage.getItem("viewedStore") ??
-    localStorage.getItem("homeStore") ??
-    "6909"
-  )
+const PIN_MEMORY_PREFIX = "bulletin_pin_"
+
+function rememberPin(key: string, pin: string) {
+  try {
+    sessionStorage.setItem(PIN_MEMORY_PREFIX + key, pin)
+  } catch {
+    // private mode etc.
+  }
+}
+
+function recallPin(key: string) {
+  try {
+    return sessionStorage.getItem(PIN_MEMORY_PREFIX + key) ?? ""
+  } catch {
+    return ""
+  }
 }
 
 function formatBulletinTimestamp(value: unknown) {
@@ -109,11 +130,43 @@ function getImportanceBadge(importance: BulletinImportance) {
   return "border-slate-500/30 bg-slate-500/10 text-slate-600"
 }
 
-export default function BulletinBoardPage() {
-  const activeStore = getActiveStore()
+function toBulletinPost(id: string, data: BulletinDocData): BulletinPost {
+  const postBase = {
+    id,
+    title: data.title ?? "Untitled Post",
+    category: data.category ?? "Announcement",
+    importance: data.importance ?? "Medium",
+    status: data.status ?? "Draft",
+    body: data.body ?? "",
+    edited: Boolean(data.edited),
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    editedAt: data.editedAt,
+    lock: data.pinProtected && isBulletinLock(data.lock) ? data.lock : null,
+  }
+
+  return {
+    ...postBase,
+    dateLabel: getDateLabel(postBase),
+  }
+}
+
+function isPublic(post: BulletinPost) {
+  return post.status === "Active" || post.status === "Pinned"
+}
+
+export default function BulletinBoardPage({
+  storeNumber: activeStore,
+  postId,
+}: {
+  storeNumber: string
+  postId?: string
+}) {
+  const navigate = useNavigate()
 
   const [posts, setPosts] = useState<BulletinPost[]>([])
-  const [selectedPost, setSelectedPost] = useState<BulletinPost | null>(null)
+  // Post opened by a direct link that isn't in the list (or doesn't exist).
+  const [linkedPost, setLinkedPost] = useState<BulletinPost | "missing" | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [importanceFilter, setImportanceFilter] = useState<
@@ -137,28 +190,8 @@ export default function BulletinBoardPage() {
         if (!alive) return
 
         const rows: BulletinPost[] = snap.docs
-          .map((docSnap) => {
-            const data = docSnap.data() as BulletinDocData
-
-            const postBase = {
-              id: docSnap.id,
-              title: data.title ?? "Untitled Post",
-              category: data.category ?? "Announcement",
-              importance: data.importance ?? "Medium",
-              status: data.status ?? "Draft",
-              body: data.body ?? "",
-              edited: Boolean(data.edited),
-              createdAt: data.createdAt,
-              updatedAt: data.updatedAt,
-              editedAt: data.editedAt,
-            }
-
-            return {
-              ...postBase,
-              dateLabel: getDateLabel(postBase),
-            }
-          })
-          .filter((post) => post.status === "Active" || post.status === "Pinned")
+          .map((docSnap) => toBulletinPost(docSnap.id, docSnap.data() as BulletinDocData))
+          .filter(isPublic)
 
         rows.sort((a, b) => {
           if (a.status === "Pinned" && b.status !== "Pinned") return -1
@@ -186,6 +219,45 @@ export default function BulletinBoardPage() {
       alive = false
     }
   }, [activeStore])
+
+  // Direct link to a post that isn't on the public list.
+  useEffect(() => {
+    setLinkedPost(null)
+    if (!postId || loading) return
+    if (posts.some((post) => post.id === postId)) return
+
+    let alive = true
+
+    getDoc(doc(db, "stores", activeStore, "bulletins", postId))
+      .then((snap) => {
+        if (!alive) return
+        if (!snap.exists()) {
+          setLinkedPost("missing")
+          return
+        }
+        const post = toBulletinPost(snap.id, snap.data() as BulletinDocData)
+        setLinkedPost(isPublic(post) ? post : "missing")
+      })
+      .catch(() => {
+        if (alive) setLinkedPost("missing")
+      })
+
+    return () => {
+      alive = false
+    }
+  }, [postId, posts, loading, activeStore])
+
+  const selectedPost: BulletinPost | "missing" | null = !postId
+    ? null
+    : posts.find((post) => post.id === postId) ?? linkedPost
+
+  const openPost = (post: BulletinPost) => {
+    navigate(`/bulletin/${encodeURIComponent(activeStore)}/${encodeURIComponent(post.id)}`)
+  }
+
+  const closePost = () => {
+    navigate(`/bulletin/${encodeURIComponent(activeStore)}`)
+  }
 
   const filteredPosts = useMemo(() => {
     const queryText = search.toLowerCase().trim()
@@ -275,19 +347,24 @@ export default function BulletinBoardPage() {
                   <tr
                     key={post.id}
                     className="bulletinClickableRow"
-                    onClick={() => setSelectedPost(post)}
+                    onClick={() => openPost(post)}
                     tabIndex={0}
                     role="button"
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault()
-                        setSelectedPost(post)
+                        openPost(post)
                       }
                     }}
                   >
                     <td>
                       <div className="nameCell">
-                        <div className="clickableName">{post.title}</div>
+                        <div className="clickableName">
+                          {post.lock ? (
+                            <span aria-label="PIN protected" title="PIN protected">🔒 </span>
+                          ) : null}
+                          {post.title}
+                        </div>
                       </div>
                     </td>
 
@@ -342,80 +419,244 @@ export default function BulletinBoardPage() {
       </div>
 
       {selectedPost ? (
-        <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center px-4 py-6"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Bulletin post"
-        >
-          <button
-            type="button"
-            aria-label="Close bulletin post"
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setSelectedPost(null)}
-          />
+        <BulletinPostModal
+          key={selectedPost === "missing" ? "missing" : selectedPost.id}
+          post={selectedPost}
+          storeNumber={activeStore}
+          onClose={closePost}
+        />
+      ) : null}
+    </main>
+  )
+}
+function BulletinPostModal({
+  post,
+  storeNumber,
+  onClose,
+}: {
+  post: BulletinPost | "missing"
+  storeNumber: string
+  onClose: () => void
+}) {
+  const missing = post === "missing"
+  const locked = !missing && Boolean(post.lock)
+  const memoryKey = missing ? "" : `${storeNumber}_${post.id}`
 
-          <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--stroke)] bg-[var(--card)] text-[var(--text)] shadow-2xl">
-            <div className="border-b border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_82%,transparent)] px-5 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+  const [unlockedBody, setUnlockedBody] = useState<string | null>(null)
+  const [pin, setPin] = useState("")
+  // True while a PIN remembered from earlier in this session is re-checked.
+  const [checking, setChecking] = useState(
+    () => !missing && Boolean(post.lock) && Boolean(recallPin(memoryKey))
+  )
+  const [pinError, setPinError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  // Re-open without asking again if the PIN was entered this session.
+  useEffect(() => {
+    if (missing || !post.lock) return
+    const saved = recallPin(memoryKey)
+    if (!saved) return
+
+    let alive = true
+    unlockBulletinBody(post.lock, saved).then((text) => {
+      if (!alive) return
+      if (text !== null) setUnlockedBody(text)
+      setChecking(false)
+    })
+
+    return () => {
+      alive = false
+    }
+  }, [missing, post, memoryKey])
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  const submitPin = async () => {
+    if (missing || !post.lock || checking) return
+    if (!isValidBulletinPin(pin)) {
+      setPinError("Enter the 4-digit PIN.")
+      return
+    }
+
+    setChecking(true)
+    setPinError(null)
+    const text = await unlockBulletinBody(post.lock, pin)
+    setChecking(false)
+
+    if (text === null) {
+      setPinError("That PIN isn't right. Check the posted sheet.")
+      setPin("")
+      return
+    }
+
+    rememberPin(memoryKey, pin)
+    setUnlockedBody(text)
+  }
+
+  const copyLink = async () => {
+    if (missing) return
+    const url = getBulletinUrl(storeNumber, post.id)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      window.prompt("Copy this link", url)
+    }
+  }
+
+  const showPinForm = locked && unlockedBody === null
+  const bodyText = locked ? unlockedBody ?? "" : missing ? "" : post.body
+
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Bulletin post"
+    >
+      <button
+        type="button"
+        aria-label="Close bulletin post"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--stroke)] bg-[var(--card)] text-[var(--text)] shadow-2xl">
+        <div className="border-b border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_82%,transparent)] px-5 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              {missing ? (
+                <h2 className="text-2xl font-black tracking-tight">Post not available</h2>
+              ) : (
+                <>
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getCategoryBadge(
-                        selectedPost.category
+                        post.category
                       )}`}
                     >
-                      {selectedPost.category}
+                      {post.category}
                     </span>
 
                     <span
                       className={`inline-flex rounded-full border px-3 py-1 text-xs font-black uppercase tracking-[0.14em] ${getImportanceBadge(
-                        selectedPost.importance
+                        post.importance
                       )}`}
                     >
-                      {selectedPost.importance}
+                      {post.importance}
                     </span>
+
+                    {locked ? (
+                      <span className="inline-flex rounded-full border border-[var(--stroke)] px-3 py-1 text-xs font-black uppercase tracking-[0.14em]">
+                        🔒 PIN
+                      </span>
+                    ) : null}
                   </div>
 
-                  <h2 className="mt-4 text-2xl font-black tracking-tight">
-                    {selectedPost.title}
+                  <h2 className="mt-4 text-2xl font-black tracking-tight [overflow-wrap:anywhere]">
+                    {post.title}
                   </h2>
 
-                  <div className="meta mt-2">
-                    {selectedPost.dateLabel}
-                    {selectedPost.edited ? " · Updated after posting" : ""}
+                  <div className="mt-2 text-sm font-semibold text-[var(--muted2)]">
+                    {post.dateLabel}
+                    {post.edited ? " · Updated after posting" : ""}
                   </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedPost(null)}
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_70%,transparent)] text-xl font-black transition hover:-translate-y-px"
-                  aria-label="Close"
-                >
-                  ×
-                </button>
-              </div>
+                </>
+              )}
             </div>
 
-            <div className="max-h-[55vh] overflow-y-auto px-5 py-5">
-              <p className="whitespace-pre-wrap text-base font-semibold leading-8 text-[var(--text)]">
-                {selectedPost.body || "No message body was added."}
-              </p>
-            </div>
-
-            <div className="flex justify-end border-t border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-5 py-4">
-              <button
-                type="button"
-                onClick={() => setSelectedPost(null)}
-                className="rounded-xl border border-[var(--stroke)] bg-[var(--card)] px-5 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px"
-              >
-                Close
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_70%,transparent)] text-xl font-black transition hover:-translate-y-px"
+              aria-label="Close"
+            >
+              ×
+            </button>
           </div>
         </div>
-      ) : null}
-    </main>
+
+        <div className="max-h-[55vh] overflow-y-auto px-5 py-5">
+          {missing ? (
+            <p className="text-base font-semibold leading-8">
+              This bulletin was removed or is no longer posted for Store {storeNumber}.
+            </p>
+          ) : showPinForm ? (
+            <form
+              className="flex flex-col items-center gap-3 py-4 text-center"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submitPin()
+              }}
+            >
+              <div className="text-base font-black">Enter the PIN to read this post</div>
+              <div className="text-sm font-semibold text-[var(--muted2)]">It's printed on the sheet posted at work.</div>
+
+              <input
+                value={pin}
+                onChange={(event) => {
+                  setPin(event.target.value.replace(/\D/g, "").slice(0, 4))
+                  setPinError(null)
+                }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                maxLength={4}
+                aria-label="4-digit PIN"
+                placeholder="••••"
+                className="mt-2 h-14 w-44 rounded-2xl border border-[var(--stroke)] bg-[var(--card2)] text-center text-3xl font-black tracking-[0.4em] text-[var(--text)] outline-none focus:border-[var(--accent,#3b82f6)]"
+              />
+
+              {pinError ? (
+                <div className="text-sm font-bold text-red-500" role="alert">
+                  {pinError}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={checking || pin.length !== 4}
+                className="mt-1 rounded-xl border border-[var(--stroke)] bg-[var(--card)] px-6 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {checking ? "Checking..." : "Unlock"}
+              </button>
+            </form>
+          ) : (
+            <p className="whitespace-pre-wrap text-base font-semibold leading-8 text-[var(--text)]">
+              {bodyText || "No message body was added."}
+            </p>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-5 py-4">
+          {missing ? (
+            <span />
+          ) : (
+            <button
+              type="button"
+              onClick={() => void copyLink()}
+              className="rounded-xl border border-[var(--stroke)] bg-transparent px-4 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px"
+            >
+              {copied ? "Link copied" : "Copy link"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-[var(--stroke)] bg-[var(--card)] px-5 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

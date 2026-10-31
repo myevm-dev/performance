@@ -9,7 +9,7 @@ import { collection, getDocs, query, where, orderBy, limit } from "firebase/fire
 import { db } from "./lib/firebase"
 import { stores as localStores } from "./data/stores"
 import ServerProfilePage from "./pages/ServerProfilePage"
-import { Routes, Route, useNavigate, useParams } from "react-router-dom"
+import { Navigate, Routes, Route, useNavigate, useParams } from "react-router-dom"
 import { QRCodeSVG } from "qrcode.react"
 
 import Navbar from "./components/Navbar"
@@ -1224,12 +1224,26 @@ function BulletinBoardRoute({
   theme: ThemeMode
   setTheme: (theme: ThemeMode) => void
 }) {
-  const activeStore = localStorage.getItem("homeStore") ?? "6909"
+  const { storeNumber: routeStore, postId } = useParams()
+  const activeStore =
+    routeStore ??
+    localStorage.getItem("viewedStore") ??
+    localStorage.getItem("homeStore") ??
+    "6909"
+
+  useEffect(() => {
+    if (routeStore) localStorage.setItem("viewedStore", routeStore)
+  }, [routeStore])
+
+  // Always show the store in the address so the link can be shared.
+  if (!routeStore) {
+    return <Navigate to={`/bulletin/${encodeURIComponent(activeStore)}`} replace />
+  }
 
   return (
     <div className="appBg">
       <Navbar activeStore={activeStore} theme={theme} setTheme={setTheme} />
-      <BulletinBoardPage />
+      <BulletinBoardPage storeNumber={activeStore} postId={postId} />
     </div>
   )
 }
@@ -1281,6 +1295,14 @@ export default function App() {
 
       <Route
         path="/bulletin"
+        element={<BulletinBoardRoute theme={theme} setTheme={setTheme} />}
+      />
+      <Route
+        path="/bulletin/:storeNumber"
+        element={<BulletinBoardRoute theme={theme} setTheme={setTheme} />}
+      />
+      <Route
+        path="/bulletin/:storeNumber/:postId"
         element={<BulletinBoardRoute theme={theme} setTheme={setTheme} />}
       />
       <Route
