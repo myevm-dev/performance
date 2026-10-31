@@ -17,7 +17,6 @@ import type { Timestamp } from "firebase/firestore"
 import { db } from "../lib/firebase"
 import { getStaffDisplayName } from "../lib/staffName"
 import {
-  getBulletinUrl,
   isBulletinLock,
   isValidBulletinPin,
   unlockBulletinBody,
@@ -335,6 +334,24 @@ export default function BulletinBoardPage({
     })
   }, [posts, search, importanceFilter])
 
+  // A single bulletin opens as its own page.
+  if (postId) {
+    return (
+      <main className="container bulletinPostMain">
+        {selectedPost ? (
+          <BulletinPostView
+            key={selectedPost === "missing" ? "missing" : selectedPost.id}
+            post={selectedPost}
+            storeNumber={activeStore}
+            onBack={closePost}
+          />
+        ) : (
+          <div className="card bulletinPostLoading">Loading bulletin...</div>
+        )}
+      </main>
+    )
+  }
+
   return (
     <main className="container">
       <div className="card bulletinBoardCard">
@@ -473,27 +490,75 @@ export default function BulletinBoardPage({
             </tbody>
           </table>
         </div>
-      </div>
 
-      {selectedPost ? (
-        <BulletinPostModal
-          key={selectedPost === "missing" ? "missing" : selectedPost.id}
-          post={selectedPost}
-          storeNumber={activeStore}
-          onClose={closePost}
-        />
-      ) : null}
+        {/* Phones: cards instead of the table */}
+        <div className="bulletinCardList">
+          {loading ? (
+            <div className="bulletinCardEmpty">
+              <strong>Loading bulletin posts...</strong>
+              <span>Checking Store {activeStore}.</span>
+            </div>
+          ) : filteredPosts.length > 0 ? (
+            filteredPosts.map((post) => (
+              <button
+                key={post.id}
+                type="button"
+                className={`bulletinCard ${post.status === "Pinned" ? "bulletinCardPinned" : ""}`}
+                onClick={() => openPost(post)}
+              >
+                <span className="bulletinCardBadges">
+                  <span
+                    className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-black uppercase tracking-[0.12em] ${getCategoryBadge(
+                      post.category
+                    )}`}
+                  >
+                    {post.category}
+                  </span>
+                  <span
+                    className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-black uppercase tracking-[0.12em] ${getImportanceBadge(
+                      post.importance
+                    )}`}
+                  >
+                    {post.importance}
+                  </span>
+                  {post.status === "Pinned" ? <span className="bulletinCardTag">📌 Pinned</span> : null}
+                  {post.lock ? <span className="bulletinCardTag">🔒 PIN</span> : null}
+                </span>
+
+                <span className="bulletinCardTitle">{post.title}</span>
+
+                <span className="bulletinCardMeta">
+                  {post.dateLabel}
+                  {post.edited ? " · Updated" : ""}
+                </span>
+
+                <span className="bulletinCardChevron" aria-hidden>
+                  ›
+                </span>
+              </button>
+            ))
+          ) : (
+            <div className="bulletinCardEmpty">
+              <strong>No posts yet.</strong>
+              <span>
+                Updates, reminders, recognition, and contest notices will appear here once posted
+                for Store {activeStore}.
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   )
 }
-function BulletinPostModal({
+function BulletinPostView({
   post,
   storeNumber,
-  onClose,
+  onBack,
 }: {
   post: BulletinPost | "missing"
   storeNumber: string
-  onClose: () => void
+  onBack: () => void
 }) {
   const missing = post === "missing"
   const locked = !missing && Boolean(post.lock)
@@ -506,7 +571,6 @@ function BulletinPostModal({
     () => !missing && Boolean(post.lock) && Boolean(recallPin(memoryKey))
   )
   const [pinError, setPinError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
 
   // Sign-off: who read it. Remembered per post on this device.
   const needsSignature = !missing && Boolean(post.requireSignature)
@@ -591,12 +655,8 @@ function BulletinPostModal({
   }, [missing, post, memoryKey])
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose()
-    }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [onClose])
+    window.scrollTo(0, 0)
+  }, [])
 
   const submitPin = async () => {
     if (missing || !post.lock || checking) return
@@ -620,41 +680,21 @@ function BulletinPostModal({
     setUnlockedBody(text)
   }
 
-  const copyLink = async () => {
-    if (missing) return
-    const url = getBulletinUrl(storeNumber, post.id)
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1800)
-    } catch {
-      window.prompt("Copy this link", url)
-    }
-  }
-
   const showPinForm = locked && unlockedBody === null
   const bodyText = locked ? unlockedBody ?? "" : missing ? "" : post.body
 
   return (
-    <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center px-4 py-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Bulletin post"
-    >
-      <button
-        type="button"
-        aria-label="Close bulletin post"
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <article className="bulletinPostPage" aria-label="Bulletin post">
+      <button type="button" className="bulletinBackLink" onClick={onBack}>
+        ← All bulletins
+      </button>
 
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--stroke)] bg-[var(--card)] text-[var(--text)] shadow-2xl">
+      <div className="overflow-hidden rounded-3xl border border-[var(--stroke)] bg-[var(--card)] text-[var(--text)] shadow-xl">
         <div className="border-b border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_82%,transparent)] px-5 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               {missing ? (
-                <h2 className="text-2xl font-black tracking-tight">Post not available</h2>
+                <h1 className="text-2xl font-black tracking-tight">Post not available</h1>
               ) : (
                 <>
                   <div className="flex flex-wrap items-center gap-2">
@@ -681,9 +721,9 @@ function BulletinPostModal({
                     ) : null}
                   </div>
 
-                  <h2 className="mt-4 text-2xl font-black tracking-tight [overflow-wrap:anywhere]">
+                  <h1 className="mt-4 text-2xl font-black tracking-tight [overflow-wrap:anywhere] sm:text-3xl">
                     {post.title}
-                  </h2>
+                  </h1>
 
                   <div className="mt-2 text-sm font-semibold text-[var(--muted2)]">
                     {post.dateLabel}
@@ -693,18 +733,10 @@ function BulletinPostModal({
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_70%,transparent)] text-xl font-black transition hover:-translate-y-px"
-              aria-label="Close"
-            >
-              ×
-            </button>
           </div>
         </div>
 
-        <div className="max-h-[55vh] overflow-y-auto px-5 py-5">
+        <div className="px-5 py-6 sm:px-7">
           {missing ? (
             <p className="text-base font-semibold leading-8">
               This bulletin was removed or is no longer posted for Store {storeNumber}.
@@ -818,28 +850,16 @@ function BulletinPostModal({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-5 py-4">
-          {missing ? (
-            <span />
-          ) : (
-            <button
-              type="button"
-              onClick={() => void copyLink()}
-              className="rounded-xl border border-[var(--stroke)] bg-transparent px-4 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px"
-            >
-              {copied ? "Link copied" : "Copy link"}
-            </button>
-          )}
-
+        <div className="flex justify-end border-t border-[var(--stroke)] bg-[color-mix(in_srgb,var(--card2)_58%,transparent)] px-5 py-4">
           <button
             type="button"
-            onClick={onClose}
+            onClick={onBack}
             className="rounded-xl border border-[var(--stroke)] bg-[var(--card)] px-5 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px"
           >
-            Close
+            Back to bulletins
           </button>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

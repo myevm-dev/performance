@@ -2174,3 +2174,132 @@ html[data-theme="light"] .lmLeagueLink {
 .hdrLabelShort {
   display: none;
 }
+
+/* Bulletin list: cards on phones */
+.bulletinCardList {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .bulletinBoardCard .tableWrap {
+    display: none;
+  }
+
+  .bulletinCardList {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .bulletinCard {
+    position: relative;
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 40px 14px 14px;
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--card2) 70%, transparent);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
+  .bulletinCard:active {
+    transform: scale(0.99);
+  }
+
+  .bulletinCardPinned {
+    border-color: color-mix(in srgb, #ec4899 45%, var(--stroke));
+  }
+
+  .bulletinCardBadges {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .bulletinCardTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--stroke);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .bulletinCardTitle {
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .bulletinCardMeta {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted2);
+  }
+
+  .bulletinCardChevron {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    transform: translateY(-50%);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--muted2);
+  }
+
+  .bulletinCardEmpty {
+    display: grid;
+    gap: 6px;
+    padding: 36px 16px;
+    text-align: center;
+    color: var(--muted2);
+  }
+
+  .bulletinCardEmpty strong {
+    font-size: 18px;
+    color: var(--text);
+  }
+}
+
+/* Single bulletin page */
+.bulletinPostMain {
+  max-width: 760px;
+}
+
+.bulletinPostPage {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0 32px;
+}
+
+.bulletinBackLink {
+  justify-self: start;
+  padding: 6px 2px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bulletinBackLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bulletinPostLoading {
+  margin-top: 16px;
+  padding: 40px 16px;
+  text-align: center;
+  font-weight: 800;
+}
