@@ -2,9 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { collection, doc, getDoc, getDocs, orderBy, query } from "firebase/firestore"
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  orderBy,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore"
 import type { Timestamp } from "firebase/firestore"
 import { db } from "../lib/firebase"
+import { getStaffDisplayName } from "../lib/staffName"
 import {
   getBulletinUrl,
   isBulletinLock,
@@ -30,6 +41,8 @@ type BulletinPost = {
   updatedAt?: unknown
   editedAt?: unknown
   lock?: BulletinLock | null
+  // Readers type their name before the post opens (logged in /reads).
+  requireSignature?: boolean
 }
 
 type BulletinDocData = {
@@ -44,6 +57,49 @@ type BulletinDocData = {
   editedAt?: unknown
   pinProtected?: boolean
   lock?: unknown
+  requireSignature?: boolean
+}
+
+const READER_NAME_KEY = "bulletin_reader_name"
+const SIGNED_PREFIX = "bulletin_signed_"
+const DEVICE_KEY = "bulletin_device_id"
+
+function readLocal(key: string) {
+  try {
+    return localStorage.getItem(key) ?? ""
+  } catch {
+    return ""
+  }
+}
+
+function writeLocal(key: string, value: string | null) {
+  try {
+    if (value === null) localStorage.removeItem(key)
+    else localStorage.setItem(key, value)
+  } catch {
+    // storage blocked
+  }
+}
+
+function getDeviceId() {
+  let id = readLocal(DEVICE_KEY)
+  if (!id) {
+    id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`
+    writeLocal(DEVICE_KEY, id)
+  }
+  return id
+}
+
+function cleanReaderName(value: string) {
+  return value.replace(/\s+/g, " ").trim()
+}
+
+function isValidReaderName(value: string) {
+  const name = cleanReaderName(value)
+  return name.length >= 2 && name.length <= 60 && /\p{L}/u.test(name)
 }
 
 const PIN_MEMORY_PREFIX = "bulletin_pin_"
@@ -143,6 +199,7 @@ function toBulletinPost(id: string, data: BulletinDocData): BulletinPost {
     updatedAt: data.updatedAt,
     editedAt: data.editedAt,
     lock: data.pinProtected && isBulletinLock(data.lock) ? data.lock : null,
+    requireSignature: Boolean(data.requireSignature),
   }
 
   return {
@@ -451,6 +508,70 @@ function BulletinPostModal({
   const [pinError, setPinError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // Sign-off: who read it. Remembered per post on this device.
+  const needsSignature = !missing && Boolean(post.requireSignature)
+  const signedKey = SIGNED_PREFIX + memoryKey
+  const [signedName, setSignedName] = useState(() =>
+    needsSignature ? readLocal(signedKey) : ""
+  )
+  const [readerName, setReaderName] = useState(() => readLocal(READER_NAME_KEY))
+  const [signing, setSigning] = useState(false)
+  const [signError, setSignError] = useState<string | null>(null)
+  const [staffNames, setStaffNames] = useState<string[]>([])
+
+  const showSignForm = needsSignature && !signedName
+
+  // Suggest this store's staff names while typing.
+  useEffect(() => {
+    if (!showSignForm) return
+    let alive = true
+    getDocs(query(collection(db, "staffUsers"), where("storeNumber", "==", storeNumber)))
+      .then((snap) => {
+        if (!alive) return
+        const names = snap.docs
+          .map((d) => getStaffDisplayName(d.data() as { name?: string; preferredName?: string }, ""))
+          .filter(Boolean)
+        setStaffNames(Array.from(new Set(names)).sort((a, b) => a.localeCompare(b)))
+      })
+      .catch(() => undefined)
+    return () => {
+      alive = false
+    }
+  }, [showSignForm, storeNumber])
+
+  const submitSignature = async () => {
+    if (missing || signing) return
+    const name = cleanReaderName(readerName)
+    if (!isValidReaderName(name)) {
+      setSignError("Type your first and last name.")
+      return
+    }
+
+    setSigning(true)
+    setSignError(null)
+    try {
+      await addDoc(collection(db, "stores", storeNumber, "bulletins", post.id, "reads"), {
+        name,
+        signedAt: serverTimestamp(),
+        deviceId: getDeviceId(),
+      })
+      writeLocal(READER_NAME_KEY, name)
+      writeLocal(signedKey, name)
+      setSignedName(name)
+    } catch (error) {
+      console.error("Failed to sign bulletin:", error)
+      setSignError("Couldn't save your name. Check your connection and try again.")
+    } finally {
+      setSigning(false)
+    }
+  }
+
+  const signAsSomeoneElse = () => {
+    writeLocal(signedKey, null)
+    setSignedName("")
+    setReaderName("")
+  }
+
   // Re-open without asking again if the PIN was entered this session.
   useEffect(() => {
     if (missing || !post.lock) return
@@ -628,10 +749,72 @@ function BulletinPostModal({
                 {checking ? "Checking..." : "Unlock"}
               </button>
             </form>
+          ) : showSignForm ? (
+            <form
+              className="flex flex-col items-center gap-3 py-4 text-center"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void submitSignature()
+              }}
+            >
+              <div className="text-base font-black">Sign in to read this post</div>
+              <div className="text-sm font-semibold text-[var(--muted2)]">
+                Type your name so your manager knows you've read it.
+              </div>
+
+              <input
+                value={readerName}
+                onChange={(event) => {
+                  setReaderName(event.target.value)
+                  setSignError(null)
+                }}
+                list="bulletin-staff-names"
+                autoComplete="name"
+                autoFocus
+                maxLength={60}
+                aria-label="Your name"
+                placeholder="First and last name"
+                className="mt-2 h-12 w-full max-w-xs rounded-2xl border border-[var(--stroke)] bg-[var(--card2)] px-4 text-center text-lg font-bold text-[var(--text)] outline-none focus:border-[var(--accent,#3b82f6)]"
+              />
+              <datalist id="bulletin-staff-names">
+                {staffNames.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+
+              {signError ? (
+                <div className="text-sm font-bold text-red-500" role="alert">
+                  {signError}
+                </div>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={signing || !isValidReaderName(readerName)}
+                className="mt-1 rounded-xl border border-[var(--stroke)] bg-[var(--card)] px-6 py-2.5 text-sm font-black text-[var(--text)] transition hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {signing ? "Signing..." : "Sign & read"}
+              </button>
+            </form>
           ) : (
-            <p className="whitespace-pre-wrap text-base font-semibold leading-8 text-[var(--text)]">
-              {bodyText || "No message body was added."}
-            </p>
+            <>
+              <p className="whitespace-pre-wrap text-base font-semibold leading-8 text-[var(--text)]">
+                {bodyText || "No message body was added."}
+              </p>
+
+              {needsSignature && signedName ? (
+                <div className="mt-4 text-sm font-semibold text-[var(--muted2)]">
+                  ✍️ Signed by {signedName} ·{" "}
+                  <button
+                    type="button"
+                    onClick={signAsSomeoneElse}
+                    className="font-black text-[var(--text)] underline underline-offset-2"
+                  >
+                    Not you?
+                  </button>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
 
