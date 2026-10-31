@@ -1,5 +1,5 @@
 // src/App.tsx
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import { calculateScore } from "./lib/score"
 import { formatSalesPerAction } from "./lib/engagementStats"
@@ -464,6 +464,28 @@ function LeaderboardApp({
 
   const [leaderboardSearch, setLeaderboardSearch] = useState("")
   const [leaderboardSearchFocused, setLeaderboardSearchFocused] = useState(false)
+  const leaderboardSearchRef = useRef<HTMLDivElement | null>(null)
+
+  // Close the search results on a tap outside the search box or Escape.
+  useEffect(() => {
+    if (!leaderboardSearchFocused) return
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!leaderboardSearchRef.current?.contains(event.target as Node)) {
+        setLeaderboardSearchFocused(false)
+      }
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLeaderboardSearchFocused(false)
+    }
+
+    document.addEventListener("pointerdown", onPointerDown)
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [leaderboardSearchFocused])
   const [staffSearchRows, setStaffSearchRows] = useState<
     Array<{
       id: string
@@ -903,7 +925,7 @@ function LeaderboardApp({
         </div>
 
         <div className={`card ${leaderboardView !== "t21" ? "dashboardViewHidden" : ""}`}>
-          <div className="cardHeader leaderboardHeader">
+          <div className="cardHeader leaderboardHeader mainLeaderboardHeader">
             <div className="leaderboardHeaderActions leaderboardHeaderActionsLeft">
             
 
@@ -922,7 +944,8 @@ function LeaderboardApp({
               }
             >
               <span aria-hidden>⌂</span>
-              <span>{isHomeStore ? "Home Store" : "Set Home"}</span>
+              <span className="hdrLabelLong">{isHomeStore ? "Home Store" : "Set Home"}</span>
+              <span className="hdrLabelShort">{isHomeStore ? "Home" : "Set Home"}</span>
             </button>
 
             <button
@@ -945,7 +968,7 @@ function LeaderboardApp({
             </button>
           </div>
 
-            <div className="leaderboardStoreSearchWrap">
+            <div className="leaderboardStoreSearchWrap" ref={leaderboardSearchRef}>
               <input
                 value={leaderboardSearch}
                 onChange={(e) => setLeaderboardSearch(e.target.value)}

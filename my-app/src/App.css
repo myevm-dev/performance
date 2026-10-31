@@ -2081,3 +2081,96 @@ html[data-theme="light"] .lmLeagueLink {
   font-size: 12px;
   line-height: 1.45;
 }
+
+/* Leaderboard header on phones: search on top, then one even row of
+   labeled shortcuts (Home · Bulletin · Contests · Help). */
+@media (max-width: 760px) {
+  .cardHeader.leaderboardHeader.mainLeaderboardHeader {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .mainLeaderboardHeader .leaderboardHeaderActionsLeft,
+  .mainLeaderboardHeader .leaderboardHeaderActionsRight {
+    display: contents;
+  }
+
+  .mainLeaderboardHeader .leaderboardStoreSearchWrap {
+    order: 0;
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mainLeaderboardHeader .leaderboardStoreSearchInput {
+    width: 100%;
+    height: 48px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-size: 16px; /* 16px keeps iOS from zooming on focus */
+    text-align: left;
+  }
+
+  /* Typing already searches; the print button is desktop-only. */
+  .mainLeaderboardHeader .leaderboardHeaderActionsRight .leaderboardHeaderAction:first-child,
+  .mainLeaderboardHeader .printBtn {
+    display: none !important;
+  }
+
+  .mainLeaderboardHeader .homePinnedBtn,
+  .mainLeaderboardHeader .leaderboardHeaderActionsLeft .leaderboardHeaderAction:first-child {
+    order: 1;
+    grid-column: auto;
+  }
+
+  .mainLeaderboardHeader .bulletinBtn {
+    order: 2;
+  }
+
+  .mainLeaderboardHeader .contestBtn {
+    order: 3;
+  }
+
+  .mainLeaderboardHeader .leaderboardHeaderActionsRight .leaderboardHeaderAction:last-child {
+    order: 4;
+    grid-column: auto;
+  }
+
+  .mainLeaderboardHeader .leaderboardHeaderAction {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 100%;
+    min-width: 0;
+    height: 58px;
+    min-height: 58px;
+    padding: 6px 2px;
+    border-radius: 16px;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .mainLeaderboardHeader .leaderboardHeaderAction span:not(:first-child) {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .mainLeaderboardHeader .leaderboardHeaderAction span.hdrLabelLong {
+    display: none;
+  }
+}
+
+.hdrLabelShort {
+  display: none;
+}
