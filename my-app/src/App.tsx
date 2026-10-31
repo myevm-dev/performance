@@ -954,7 +954,7 @@ function LeaderboardApp({
               aria-label="Open bulletin board"
               title="Bulletin board"
             >
-              <span aria-hidden>▣</span>
+              <span aria-hidden>📌</span>
               <span>Bulletin</span>
             </button>
             <button
